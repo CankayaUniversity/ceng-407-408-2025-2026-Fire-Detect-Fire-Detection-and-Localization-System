@@ -23,20 +23,16 @@ class FireDetectionSystem:
         self.save_dir = Path(save_dir)
         self.detection_interval = detection_interval
         
-        # Klasörleri oluştur
         self.save_dir.mkdir(exist_ok=True)
         self.detections_dir = self.save_dir / "detections"
         self.detections_dir.mkdir(exist_ok=True)
         
-        # Video kayıt için
         self.video_writer = None
         self.video_filename = None
         self.is_recording = False
         
-        # Tespit sonuçları
         self.detection_log = []
         
-        # Yangın tespiti modeli
         print("Loading fire detection model...")
         self.fire_detector = FireDetector(model_type="color_enhanced")
         print("✓ Fire detector ready")
@@ -46,7 +42,6 @@ class FireDetectionSystem:
         print(f"Connecting to RTSP stream: {self.rtsp_url}")
         self.cap = cv2.VideoCapture(self.rtsp_url, cv2.CAP_FFMPEG)
         
-        # RTSP için ayarlar
         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         
         if not self.cap.isOpened():
@@ -61,12 +56,10 @@ class FireDetectionSystem:
         if self.is_recording:
             return
         
-        # Video codec ve format
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.video_filename = self.save_dir / f"recording_{timestamp}.mp4"
         
-        # Frame boyutlarını al
         width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         fps = int(self.cap.get(cv2.CAP_PROP_FPS)) or 30
@@ -99,7 +92,6 @@ class FireDetectionSystem:
         Returns:
             dict: Tespit sonuçları
         """
-        # Fire detector ile tespit yap
         detection = self.fire_detector.detect(frame)
         
         result = {
@@ -110,7 +102,6 @@ class FireDetectionSystem:
         }
         
         if detection["fire_detected"]:
-            # Tespit edilen frame'i kaydet
             self._save_detection_frame(frame, result)
             self.detection_log.append(result)
         
@@ -157,7 +148,6 @@ class FireDetectionSystem:
                 frame_count += 1
                 current_time = cv2.getTickCount() / cv2.getTickFrequency()
                 
-                # Yangın tespiti (belirli aralıklarla)
                 detection = None
                 if current_time - last_detection_time >= self.detection_interval:
                     detection = self.detect_fire(frame)
@@ -169,25 +159,19 @@ class FireDetectionSystem:
                         if detection.get("saved_frame"):
                             print(f"   Saved: {detection['saved_frame']}")
                 
-                # Video kaydı
                 if self.is_recording and self.video_writer:
                     self.video_writer.write(frame)
                 
-                # Preview
                 if show_preview:
-                    # Tespit sonuçlarını frame'e çiz
                     if detection:
                         display_frame = self.fire_detector.draw_detections(frame, detection)
                     else:
-                        # Son tespit sonucunu göster
                         if self.detection_log:
                             last_detection = self.detection_log[-1]
                             display_frame = self.fire_detector.draw_detections(frame, last_detection)
                         else:
                             display_frame = frame.copy()
                     cv2.imshow("Fire Detection System", display_frame)
-                
-                # Klavye kontrolü
                 key = cv2.waitKey(1) & 0xFF
                 if key == ord('q'):
                     break
@@ -231,17 +215,14 @@ class FireDetectionSystem:
 
 def main():
     """Ana fonksiyon"""
-    # RTSP URL (arkadaşınızın stream'i)
     rtsp_url = "rtsp://192.168.1.193:8554/stream"
     
-    # Fire Detection System oluştur
     system = FireDetectionSystem(
         rtsp_url=rtsp_url,
         save_dir="recordings",
-        detection_interval=1.0  # Her 1 saniyede bir tespit
+        detection_interval=1.0  
     )
     
-    # Stream'i işle
     system.process_stream(show_preview=True, auto_record=True)
 
 

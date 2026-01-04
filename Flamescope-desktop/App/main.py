@@ -15,7 +15,6 @@ def main():
 
         ip = cam["address"].split("//")[1].split(":")[0]
 
-        # Test credentials (şimdilik manuel)
         username = "admin"
         password = "admin"
         port = 80

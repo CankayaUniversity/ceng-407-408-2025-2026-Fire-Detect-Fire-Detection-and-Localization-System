@@ -1,0 +1,34 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.Python
+.env
+.env.local
+*.db
+
+# Backend
+backend/flamescope.db
+
+# Detector
+detector/snapshots/*.jpg
+detector/snapshots/*.jpeg
+
+# Flutter / Mobile
+mobile/.dart_tool/
+mobile/.packages
+mobile/build/
+mobile/*.iml
+*.jks
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

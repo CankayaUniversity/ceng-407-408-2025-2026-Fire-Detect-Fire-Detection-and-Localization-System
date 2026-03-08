@@ -1,0 +1,14 @@
+fastapi==0.109.2
+uvicorn[standard]==0.27.1
+sqlalchemy==2.0.25
+aiosqlite==0.19.0
+# PostgreSQL (ileride kullanmak için)
+# asyncpg==0.29.0
+# psycopg2-binary==2.9.9
+pydantic==2.6.1
+pydantic-settings==2.1.0
+email-validator==2.1.0
+python-jose[cryptography]==3.3.0
+bcrypt>=4.0.0
+python-multipart==0.0.9
+alembic==1.13.1

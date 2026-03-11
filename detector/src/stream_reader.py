@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Generator, Tuple
 
 import cv2
+import os
 
 
 class StreamReader:
@@ -19,7 +20,21 @@ class StreamReader:
         self.source = source
         # Convert numeric source like "0" to int for webcam
         src = int(source) if source.isdigit() else source
-        self.cap = cv2.VideoCapture(src)
+
+        # On Windows, default backend (MSMF) can fail with -1072875772
+        # when another app touched the camera. Try DirectShow first.
+        is_windows = os.name == "nt"
+        cap = None
+        if is_windows and isinstance(src, int):
+            cap = cv2.VideoCapture(src, cv2.CAP_DSHOW)
+            if not cap.isOpened():
+                cap.release()
+                cap = None
+
+        if cap is None:
+            cap = cv2.VideoCapture(src)
+
+        self.cap = cap
 
         if not self.cap.isOpened():
             raise RuntimeError(f"Cannot open video source: {source}")

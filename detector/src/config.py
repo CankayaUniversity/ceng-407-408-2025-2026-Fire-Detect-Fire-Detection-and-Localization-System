@@ -40,13 +40,13 @@ class Settings(BaseSettings):
     )
 
     # Cooldown in seconds between incidents for same camera
-    cooldown_seconds: int = 60
+    cooldown_seconds: int = 10
 
     # Detection tuning (reduce false alarms)
-    detection_fire_ratio_threshold: float = 0.02  # min ratio of fire-like pixels to total
-    detection_min_fire_area_ratio: float = 0.005  # min ratio of largest fire blob to total (filter tiny spots)
-    detection_confidence_threshold: float = 0.25  # min confidence to count frame as "fire"
-    detection_consecutive_frames: int = 5  # require this many consecutive fire frames before incident
+    detection_fire_ratio_threshold: float = 0.005  # min ratio of fire-like pixels to total
+    detection_min_fire_area_ratio: float = 0.0  # min ratio of largest fire blob to total (filter tiny spots)
+    detection_confidence_threshold: float = 0.1  # min confidence to count frame as "fire"
+    detection_consecutive_frames: int = 2  # require this many consecutive fire frames before incident
 
     class Config:
         env_file = ".env"

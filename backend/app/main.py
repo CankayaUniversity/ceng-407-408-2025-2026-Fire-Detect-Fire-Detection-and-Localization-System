@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.database.session import init_db
-from app.routers import auth, me, cameras, incidents
+from app.routers import auth, me, cameras, incidents, users
 
 settings = get_settings()
 
@@ -32,6 +32,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(me.router)
+app.include_router(users.router)
 app.include_router(cameras.router)
 app.include_router(incidents.router)
 

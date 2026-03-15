@@ -5,6 +5,7 @@ class UserModel {
   final String fullName;
   final String email;
   final AppRole role;
+  final bool isActive;
   final DateTime? createdAt;
 
   UserModel({
@@ -12,6 +13,7 @@ class UserModel {
     required this.fullName,
     required this.email,
     required this.role,
+    this.isActive = true,
     this.createdAt,
   });
 
@@ -21,6 +23,7 @@ class UserModel {
       fullName: json['full_name'] as String? ?? '',
       email: json['email'] as String? ?? '',
       role: AppRole.fromString(json['role'] as String?),
+      isActive: json['is_active'] as bool? ?? true,
       createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at'] as String) : null,
     );
   }

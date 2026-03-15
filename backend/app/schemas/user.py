@@ -15,6 +15,7 @@ class UserResponse(BaseModel):
     full_name: str
     email: str
     role: Role
+    is_active: bool = True
     created_at: datetime
 
     class Config:
@@ -30,3 +31,7 @@ class UserMe(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class UserListResponse(BaseModel):
+    users: list[UserResponse]

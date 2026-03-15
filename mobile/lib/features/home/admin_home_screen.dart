@@ -26,7 +26,15 @@ class AdminHomeScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          if (user != null)
+          ListTile(
+            leading: const Icon(Icons.people_outline),
+            title: const Text('Kullanıcı Yönetimi'),
+            subtitle: const Text('Kullanıcıları listele ve yeni ekle'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(AppRouter.userList),
+          ),
+          if (user != null) ...[
+            const SizedBox(height: 8),
             Card(
               child: ListTile(
                 leading: const Icon(Icons.person),
@@ -34,7 +42,8 @@ class AdminHomeScreen extends StatelessWidget {
                 subtitle: Text(user.email),
               ),
             ),
-          const SizedBox(height: 16),
+          ],
+          const SizedBox(height: 8),
           ListTile(
             leading: const Icon(Icons.video_library),
             title: const Text('Kameralar'),

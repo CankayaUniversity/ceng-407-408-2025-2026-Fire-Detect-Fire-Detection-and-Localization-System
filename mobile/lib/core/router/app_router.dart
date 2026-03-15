@@ -12,6 +12,8 @@ import 'package:flamescope/features/home/fire_response_home_screen.dart';
 import 'package:flamescope/features/incidents/incident_list_screen.dart';
 import 'package:flamescope/features/incidents/incident_detail_screen.dart';
 import 'package:flamescope/features/cameras/camera_list_screen.dart';
+import 'package:flamescope/features/users/user_list_screen.dart';
+import 'package:flamescope/features/users/user_create_screen.dart';
 import 'package:flamescope/features/stream/live_stream_screen.dart';
 import 'package:flamescope/features/emergency/emergency_alert_screen.dart';
 
@@ -25,6 +27,8 @@ class AppRouter {
   static const String incidentList = '/incidents';
   static const String incidentDetail = '/incidents/:id';
   static const String cameraList = '/cameras';
+  static const String userList = '/users';
+  static const String userCreate = '/users/create';
   static const String liveStream = '/stream';
   static const String emergencyAlert = '/emergency';
 
@@ -65,6 +69,8 @@ class AppRouter {
         },
       ),
       GoRoute(path: cameraList, builder: (_, __) => const CameraListScreen()),
+      GoRoute(path: userList, builder: (_, __) => const UserListScreen()),
+      GoRoute(path: userCreate, builder: (_, __) => const UserCreateScreen()),
       GoRoute(
         path: liveStream,
         builder: (c, state) {

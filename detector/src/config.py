@@ -42,6 +42,9 @@ class Settings(BaseSettings):
     # Cooldown in seconds between incidents for same camera
     cooldown_seconds: int = 10
 
+    # Detector implementation: "mock" (HSV heuristic) or "cnn"
+    detector_mode: str = "mock"
+
     # Detection tuning (reduce false alarms)
     detection_fire_ratio_threshold: float = 0.005  # min ratio of fire-like pixels to total
     detection_min_fire_area_ratio: float = 0.0  # min ratio of largest fire blob to total (filter tiny spots)

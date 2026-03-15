@@ -8,4 +8,8 @@ class ApiEndpoints {
   static const String me = '/me';
   static const String cameras = '/cameras';
   static const String incidents = '/incidents';
+  static const String users = '/users';
+
+  static String userDeactivate(int userId) => '/users/$userId/deactivate';
+  static String userReactivate(int userId) => '/users/$userId/reactivate';
 }

@@ -6,7 +6,8 @@ import time
 from datetime import datetime, timedelta, timezone
 
 from .config import CameraConfig, get_settings
-from .detector import MockFireDetector
+from .cnn_detector import CNNFireDetector
+from .detector import BaseFireDetector, MockFireDetector
 from .notifier import BackendNotifier
 from .stream_reader import StreamReader
 
@@ -25,7 +26,7 @@ def camera_loop(
     cam: CameraConfig,
     cooldown_seconds: int,
     consecutive_required: int,
-    detector: MockFireDetector,
+    detector: BaseFireDetector,
     notifier: BackendNotifier,
 ) -> None:
     """
@@ -120,11 +121,17 @@ def camera_loop(
 
 def main() -> None:
     settings = get_settings()
-    detector = MockFireDetector(
-        fire_threshold=settings.detection_fire_ratio_threshold,
-        min_fire_area_ratio=settings.detection_min_fire_area_ratio,
-        confidence_threshold=settings.detection_confidence_threshold,
-    )
+    mode = (settings.detector_mode or "mock").strip().lower()
+    if mode == "cnn":
+        detector: BaseFireDetector = CNNFireDetector()
+        logger.info("Using CNN detector (placeholder model).")
+    else:
+        detector = MockFireDetector(
+            fire_threshold=settings.detection_fire_ratio_threshold,
+            min_fire_area_ratio=settings.detection_min_fire_area_ratio,
+            confidence_threshold=settings.detection_confidence_threshold,
+        )
+        logger.info("Using mock (HSV) detector.")
     notifier = BackendNotifier(settings=settings)
 
     threads: list[threading.Thread] = []

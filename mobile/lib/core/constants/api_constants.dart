@@ -1,7 +1,16 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 
-/// Backend API base URL. Web: localhost:8000, Android emulator: 10.0.2.2:8000, fiziksel cihaz: bilgisayar IP.
-String get kBaseUrl => kIsWeb ? 'http://localhost:8000' : 'http://10.0.2.2:8000';
+/// Bilgisayarın LAN IP'si (fiziksel telefon için):
+const String kLanIp = '192.168.1.200';
+
+/// Backend API base URL.
+/// - Web (Chrome): localhost:8000
+/// - Android fiziksel cihaz (aynı Wi-Fi): kLanIp:8000
+/// - Android emülatör: 10.0.2.2:8000
+String get kBaseUrl => kIsWeb ? 'http://localhost:8000' : 'http://$kLanIp:8000';
+
+/// WebSocket URL (gerçek zamanlı yangın bildirimi)
+String get kWsUrl => kIsWeb ? 'ws://localhost:8000/ws' : 'ws://$kLanIp:8000/ws';
 
 class ApiEndpoints {
   static const String login = '/auth/login';

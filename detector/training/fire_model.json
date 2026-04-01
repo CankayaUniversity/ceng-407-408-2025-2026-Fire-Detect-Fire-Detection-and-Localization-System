@@ -1,0 +1,14 @@
+{
+  "epoch": 16,
+  "stage": 2,
+  "val_f1": 0.9729729729729729,
+  "val_recall": 0.975,
+  "val_acc": 0.975609756097561,
+  "recommended_threshold": 0.34,
+  "class_names": [
+    "no_fire",
+    "fire"
+  ],
+  "fire_class_index": 1,
+  "input_size": 224
+}

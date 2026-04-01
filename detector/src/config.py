@@ -45,11 +45,18 @@ class Settings(BaseSettings):
     # Detector implementation: "mock" (HSV heuristic) or "cnn"
     detector_mode: str = "mock"
 
+    # CNN model path (relative to detector/ dir or absolute)
+    # Set via env: CNN_MODEL_PATH=training/fire_model.pt
+    cnn_model_path: str | None = None
+
+    # CNN confidence threshold override (None = use value from training metadata JSON)
+    cnn_threshold: float | None = None
+
     # Detection tuning (reduce false alarms)
     detection_fire_ratio_threshold: float = 0.005  # min ratio of fire-like pixels to total
     detection_min_fire_area_ratio: float = 0.0  # min ratio of largest fire blob to total (filter tiny spots)
     detection_confidence_threshold: float = 0.1  # min confidence to count frame as "fire"
-    detection_consecutive_frames: int = 2  # require this many consecutive fire frames before incident
+    detection_consecutive_frames: int = 3  # require this many consecutive fire frames before incident
 
     class Config:
         env_file = ".env"

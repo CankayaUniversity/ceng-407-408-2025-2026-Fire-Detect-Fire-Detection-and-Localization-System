@@ -1,5 +1,6 @@
 # Python
 .venv/
+.venv312/
 venv/
 __pycache__/
 *.pyc
@@ -13,8 +14,27 @@ __pycache__/
 backend/flamescope.db
 
 # Detector
-detector/snapshots/*.jpg
-detector/snapshots/*.jpeg
+detector/.env
+detector/snapshots/
+snapshots/
+
+# Dataset görselleri (büyük, git'e koyma)
+detector/training/dataset/train/fire/
+detector/training/dataset/train/no_fire/
+detector/training/dataset/val/fire/
+detector/training/dataset/val/no_fire/
+
+# Geçici indirme klasörleri ve ham veriler
+detector/training/_tmp*/
+detector/training/_raw*/
+detector/training/_cifar_cache/
+detector/training/*.zip
+detector/training/fire_images.zip
+detector/training/extract_frames.py
+detector/training/prepare_dataset.py
+
+# Eğitim logu
+detector/training/train_log*.txt
 
 # Flutter / Mobile
 mobile/.dart_tool/

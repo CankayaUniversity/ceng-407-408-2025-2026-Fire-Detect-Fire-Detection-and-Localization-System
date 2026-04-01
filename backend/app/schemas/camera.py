@@ -8,6 +8,12 @@ class CameraCreate(BaseModel):
     rtsp_url: str
 
 
+class CameraUpdate(BaseModel):
+    name: str | None = None
+    location: str | None = None
+    rtsp_url: str | None = None
+
+
 class CameraResponse(BaseModel):
     id: int
     name: str

@@ -102,50 +102,79 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
+                          // ── Snapshot fotoğrafı ─────────────────────────────
+                          if (_incident!.snapshotUrl != null && _incident!.snapshotUrl!.startsWith('http'))
+                            _SnapshotImage(url: _incident!.snapshotUrl!),
+
+                          const SizedBox(height: 12),
+
+                          // ── Olay bilgileri ─────────────────────────────────
                           Card(
                             child: Padding(
                               padding: const EdgeInsets.all(16),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(_incident!.cameraName ?? 'Kamera #${_incident!.cameraId}', style: Theme.of(context).textTheme.titleLarge),
+                                  Text(
+                                    _incident!.cameraName ?? 'Kamera #${_incident!.cameraId}',
+                                    style: Theme.of(context).textTheme.titleLarge,
+                                  ),
                                   const SizedBox(height: 8),
-                                  Text('Konum: ${_incident!.cameraLocation ?? "-"}'),
-                                  Text('Durum: ${_incident!.status}'),
-                                  if (_incident!.confidence != null) Text('Güven: ${(_incident!.confidence! * 100).toStringAsFixed(0)}%'),
-                                  if (_incident!.detectedAt != null) Text('Tespit: ${_formatDate(_incident!.detectedAt!)}'),
+                                  if (_incident!.cameraLocation != null)
+                                    _InfoRow(Icons.location_on, _incident!.cameraLocation!),
+                                  _InfoRow(
+                                    Icons.circle,
+                                    _incident!.status,
+                                    iconColor: _incident!.isConfirmed
+                                        ? Colors.green
+                                        : _incident!.isDetected
+                                            ? Colors.orange
+                                            : Colors.grey,
+                                  ),
+                                  if (_incident!.confidence != null)
+                                    _InfoRow(
+                                      Icons.percent,
+                                      'Güven: ${(_incident!.confidence! * 100).toStringAsFixed(0)}%',
+                                    ),
+                                  if (_incident!.detectedAt != null)
+                                    _InfoRow(Icons.access_time, _formatDate(_incident!.detectedAt!)),
                                 ],
                               ),
                             ),
                           ),
+
+                          // ── Onayla / Reddet ────────────────────────────────
                           if (canConfirmDismiss && _incident!.isDetected) ...[
                             const SizedBox(height: 16),
                             Row(
                               children: [
                                 Expanded(
                                   child: FilledButton.icon(
+                                    style: FilledButton.styleFrom(backgroundColor: Colors.red),
                                     onPressed: _confirm,
-                                    icon: const Icon(Icons.check),
-                                    label: const Text('Doğrula'),
+                                    icon: const Icon(Icons.local_fire_department),
+                                    label: const Text('Yangın — Onayla'),
                                   ),
                                 ),
-                                const SizedBox(width: 16),
+                                const SizedBox(width: 12),
                                 Expanded(
                                   child: OutlinedButton.icon(
                                     onPressed: _dismiss,
                                     icon: const Icon(Icons.close),
-                                    label: const Text('Reddet'),
+                                    label: const Text('Yanlış Alarm'),
                                   ),
                                 ),
                               ],
                             ),
                           ],
+
+                          // ── Canlı yayın ────────────────────────────────────
                           if ((auth.user?.role == AppRole.admin || auth.user?.role == AppRole.manager) && _incident!.canStream) ...[
-                            const SizedBox(height: 16),
-                            FilledButton.icon(
+                            const SizedBox(height: 12),
+                            OutlinedButton.icon(
                               onPressed: () => context.push(AppRouter.liveStreamPath(cameraId: _incident!.cameraId, incidentId: _incident!.id)),
                               icon: const Icon(Icons.videocam),
-                              label: const Text('Canlı Yayın'),
+                              label: const Text('Canlı Yayına Geç'),
                             ),
                           ],
                         ],
@@ -156,5 +185,64 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
 
   String _formatDate(DateTime d) {
     return '${d.day}.${d.month}.${d.year} ${d.hour}:${d.minute.toString().padLeft(2, '0')}';
+  }
+}
+
+// ── Yardımcı widget'lar ──────────────────────────────────────────────────────
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow(this.icon, this.text, {this.iconColor});
+  final IconData icon;
+  final String text;
+  final Color? iconColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: iconColor ?? Theme.of(context).colorScheme.primary),
+          const SizedBox(width: 6),
+          Expanded(child: Text(text)),
+        ],
+      ),
+    );
+  }
+}
+
+class _SnapshotImage extends StatelessWidget {
+  const _SnapshotImage({required this.url});
+  final String url;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: AspectRatio(
+        aspectRatio: 16 / 9,
+        child: Image.network(
+          url,
+          fit: BoxFit.cover,
+          loadingBuilder: (_, child, progress) => progress == null
+              ? child
+              : Container(
+                  color: Colors.grey[200],
+                  child: const Center(child: CircularProgressIndicator()),
+                ),
+          errorBuilder: (_, __, ___) => Container(
+            color: Colors.grey[200],
+            child: const Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.broken_image, size: 48, color: Colors.grey),
+                SizedBox(height: 8),
+                Text('Görüntü yüklenemedi', style: TextStyle(color: Colors.grey)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

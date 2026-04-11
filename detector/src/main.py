@@ -126,6 +126,14 @@ def main() -> None:
             threshold=settings.cnn_threshold,
         )
         logger.info("CNN detector yüklendi. model=%s", settings.cnn_model_path or "(yok)")
+    elif mode == "yolo":
+        from .yolo_detector import YOLOFireDetector
+        detector = YOLOFireDetector(
+            model_path=settings.yolo_model_path,
+            confidence_threshold=settings.yolo_confidence_threshold,
+            imgsz=settings.yolo_imgsz,
+        )
+        logger.info("YOLO detector yüklendi. model=%s", settings.yolo_model_path or "(yok)")
     else:
         detector = MockFireDetector(
             fire_threshold=settings.detection_fire_ratio_threshold,

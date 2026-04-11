@@ -1,3 +1,5 @@
+import 'package:flamescope/core/constants/api_constants.dart';
+
 class IncidentModel {
   final int id;
   final int cameraId;
@@ -34,7 +36,7 @@ class IncidentModel {
       rtspUrl: json['rtsp_url'] as String?,
       status: json['status'] as String? ?? 'DETECTED',
       confidence: (json['confidence'] as num?)?.toDouble(),
-      snapshotUrl: json['snapshot_url'] as String?,
+      snapshotUrl: normalizeBackendAssetUrl(json['snapshot_url'] as String?),
       detectedAt: json['detected_at'] != null ? DateTime.tryParse(json['detected_at'] as String) : null,
       confirmedAt: json['confirmed_at'] != null ? DateTime.tryParse(json['confirmed_at'] as String) : null,
       confirmedBy: json['confirmed_by'] as int?,

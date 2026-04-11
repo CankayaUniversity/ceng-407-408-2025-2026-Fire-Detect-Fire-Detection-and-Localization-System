@@ -35,7 +35,7 @@ class FireIncidentEvent {
       cameraName: json['camera_name'] as String? ?? 'Kamera #${json['camera_id']}',
       cameraLocation: json['camera_location'] as String?,
       confidence: (json['confidence'] as num?)?.toDouble(),
-      snapshotUrl: json['snapshot_url'] as String?,
+      snapshotUrl: normalizeBackendAssetUrl(json['snapshot_url'] as String?),
       detectedAt: json['detected_at'] as String?,
     );
   }

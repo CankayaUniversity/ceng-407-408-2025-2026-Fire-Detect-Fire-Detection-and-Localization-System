@@ -12,6 +12,42 @@ String get kBaseUrl => kIsWeb ? 'http://localhost:8000' : 'http://$kLanIp:8000';
 /// WebSocket URL (gerçek zamanlı yangın bildirimi)
 String get kWsUrl => kIsWeb ? 'ws://localhost:8000/ws' : 'ws://$kLanIp:8000/ws';
 
+String? normalizeBackendAssetUrl(String? rawUrl) {
+  final raw = rawUrl?.trim();
+  if (raw == null || raw.isEmpty) return null;
+
+  final apiBase = Uri.parse(kBaseUrl);
+  final parsed = Uri.tryParse(raw);
+
+  if (parsed != null && parsed.hasScheme) {
+    final isLocalBackendHost =
+        parsed.host == 'localhost' || parsed.host == '127.0.0.1';
+    if (!kIsWeb && isLocalBackendHost) {
+      return parsed
+          .replace(
+            scheme: apiBase.scheme,
+            host: apiBase.host,
+            port: apiBase.port,
+          )
+          .toString();
+    }
+    return raw;
+  }
+
+  final normalizedPath = raw.replaceAll('\\', '/');
+  final snapshotsIndex = normalizedPath.toLowerCase().lastIndexOf('snapshots/');
+  if (snapshotsIndex >= 0) {
+    final suffix = normalizedPath.substring(snapshotsIndex);
+    return apiBase.resolve('/$suffix').toString();
+  }
+
+  if (normalizedPath.startsWith('/')) {
+    return apiBase.resolve(normalizedPath).toString();
+  }
+
+  return apiBase.resolve('/$normalizedPath').toString();
+}
+
 class ApiEndpoints {
   static const String login = '/auth/login';
   static const String me = '/me';

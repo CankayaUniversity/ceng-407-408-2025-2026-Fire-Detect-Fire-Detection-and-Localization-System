@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     # Cooldown in seconds between incidents for same camera
     cooldown_seconds: int = 10
 
-    # Detector implementation: "mock" (HSV heuristic) or "cnn"
+    # Detector implementation: "mock" (HSV heuristic), "cnn", or "yolo"
     detector_mode: str = "mock"
 
     # CNN model path (relative to detector/ dir or absolute)
@@ -51,6 +51,16 @@ class Settings(BaseSettings):
 
     # CNN confidence threshold override (None = use value from training metadata JSON)
     cnn_threshold: float | None = None
+
+    # YOLO model path (relative to detector/ dir or absolute)
+    # Set via env: YOLO_MODEL_PATH=training/best.pt
+    yolo_model_path: str | None = None
+
+    # YOLO confidence threshold for incident creation
+    yolo_confidence_threshold: float = 0.4
+
+    # YOLO input image size used during inference
+    yolo_imgsz: int = 512
 
     # Detection tuning (reduce false alarms)
     detection_fire_ratio_threshold: float = 0.005  # min ratio of fire-like pixels to total

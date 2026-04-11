@@ -103,7 +103,7 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           // ── Snapshot fotoğrafı ─────────────────────────────
-                          if (_incident!.snapshotUrl != null && _incident!.snapshotUrl!.startsWith('http'))
+                          if ((_incident!.snapshotUrl ?? '').isNotEmpty)
                             _SnapshotImage(url: _incident!.snapshotUrl!),
 
                           const SizedBox(height: 12),

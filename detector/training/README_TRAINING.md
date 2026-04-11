@@ -211,6 +211,62 @@ cd detector
 python -m src.main
 ```
 
+## 4.5. Modeli Test Dataseti Üzerinde Değerlendirme
+
+Ayrı bir test split ile modelin false positive / false negative davranışını
+ölçmek için şu yapıyı kullan:
+
+```text
+detector/training/dataset/
+├── train/
+├── val/
+└── test/
+    ├── fire/
+    └── no_fire/
+```
+
+Değerlendirme script'i runtime'daki `CNNFireDetector` akışını kullanır.
+Yani karanlık-frame filtresi ve HSV ön filtresi de sonuca dahildir.
+
+```powershell
+cd detector
+
+# Ayrı test split varsa (önerilen)
+python -m training.evaluate_fire_model `
+  --data-dir training/dataset `
+  --split test `
+  --model-path training/fire_model.pt
+
+# Henüz test split yoksa geçici olarak val split üzerinde
+python -m training.evaluate_fire_model `
+  --data-dir training/dataset `
+  --split val `
+  --model-path training/fire_model.pt
+```
+
+Threshold override örneği:
+
+```powershell
+python -m training.evaluate_fire_model `
+  --data-dir training/dataset `
+  --split test `
+  --model-path training/fire_model.pt `
+  --threshold 0.50
+```
+
+Script şunları raporlar:
+- confusion matrix (`TP`, `FP`, `TN`, `FN`)
+- accuracy / precision / recall / F1
+- threshold sweep sonucu
+- false positive ve false negative örnekleri
+- HSV / dark-frame prefilter diagnostics
+
+JSON raporu varsayılan olarak buraya yazar:
+
+```text
+training/dataset/<split>/evaluation_report.json
+```
+
 ---
 
 ## 5. RTSP Test Kamerası

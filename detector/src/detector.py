@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import logging
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Any
 
 import cv2
 import numpy as np
@@ -17,7 +19,16 @@ class DetectionResult:
     largest_blob_ratio: float  # ratio of largest contour to frame (for logging)
 
 
-class MockFireDetector:
+class BaseFireDetector(ABC):
+    """Interface for fire detectors. Implementations: MockFireDetector, CNNFireDetector."""
+
+    @abstractmethod
+    def detect(self, frame: Any) -> DetectionResult:
+        """Analyse a single frame and return detection result."""
+        ...
+
+
+class MockFireDetector(BaseFireDetector):
     """
     MVP fire detector.
 

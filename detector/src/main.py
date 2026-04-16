@@ -5,8 +5,9 @@ import threading
 import time
 from datetime import datetime, timedelta, timezone
 
-from .config import CameraConfig, get_settings
-from .detector import MockFireDetector
+from .camera_manager import CameraEntry, DynamicCameraManager
+from .config import get_settings
+from .detector import BaseFireDetector, MockFireDetector
 from .notifier import BackendNotifier
 from .stream_reader import StreamReader
 
@@ -21,142 +22,162 @@ def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+_RETRY_DELAYS = [5, 10, 20, 30, 60]  # bağlantı hatasında bekleme süreleri (sn)
+
+
 def camera_loop(
-    cam: CameraConfig,
+    entry: CameraEntry,
     cooldown_seconds: int,
     consecutive_required: int,
-    detector: MockFireDetector,
+    detector: BaseFireDetector,
     notifier: BackendNotifier,
 ) -> None:
     """
-    Per-camera loop: require N consecutive fire frames before sending incident;
-    cooldown applies between incidents.
+    Bir kamera için sürekli çalışan döngü. Bağlantı kesilince otomatik yeniden bağlanır.
+    N ardışık fire frame → backend'e incident gönder → cooldown uygula.
     """
     logger.info(
-        "Starting camera loop for %s (source=%s, consecutive_frames=%d, cooldown=%ds)",
-        cam.name,
-        cam.source,
-        consecutive_required,
-        cooldown_seconds,
+        "Kamera başlatıldı: %s  source=%s  consecutive=%d  cooldown=%ds",
+        entry.name, entry.rtsp_url, consecutive_required, cooldown_seconds,
     )
+
+    retry_idx = 0
     last_incident_at: datetime | None = None
-    consecutive_fire_count = 0
 
-    try:
-        reader = StreamReader(cam.source)
-    except RuntimeError as exc:
-        logger.error("Camera %s could not be opened: %s", cam.name, exc)
-        return
+    while True:
+        consecutive_fire_count = 0
 
-    try:
-        for idx, frame in reader.frames():
-            result = detector.detect(frame)
-            if not result.has_fire:
-                if consecutive_fire_count > 0:
-                    logger.debug(
-                        "[%s] Fire lost at frame %d (was %d/%d consecutive); resetting.",
-                        cam.name,
-                        idx,
-                        consecutive_fire_count,
-                        consecutive_required,
-                    )
-                consecutive_fire_count = 0
-                time.sleep(0.05)
-                continue
-
-            consecutive_fire_count += 1
-            logger.debug(
-                "[%s] Frame %d: fire detected (%d/%d consecutive)",
-                cam.name,
-                idx,
-                consecutive_fire_count,
-                consecutive_required,
+        # ── Bağlan ────────────────────────────────────────────────
+        try:
+            reader = StreamReader(entry.rtsp_url)
+        except RuntimeError as exc:
+            delay = _RETRY_DELAYS[min(retry_idx, len(_RETRY_DELAYS) - 1)]
+            logger.warning(
+                "Kamera açılamadı [%s]: %s — %ds sonra tekrar denenecek",
+                entry.name, exc, delay,
             )
+            retry_idx += 1
+            time.sleep(delay)
+            continue
 
-            if consecutive_fire_count < consecutive_required:
-                time.sleep(0.05)
-                continue
+        retry_idx = 0  # başarılı bağlantıda sayacı sıfırla
+        logger.info("Kamera bağlandı: %s", entry.name)
 
-            now = _utc_now()
-            # Cooldown: do not send again until this time has passed
-            next_allowed_at = (
-                last_incident_at + timedelta(seconds=cooldown_seconds)
-                if last_incident_at else None
-            )
-            if next_allowed_at is not None and now < next_allowed_at:
-                remaining = (next_allowed_at - now).total_seconds()
-                logger.info(
-                    "[%s] Cooldown active: next incident allowed at %s (remaining %.1fs). Skipping.",
-                    cam.name,
-                    next_allowed_at.strftime("%H:%M:%SZ"),
-                    remaining,
+        # ── Frame döngüsü ──────────────────────────────────────────
+        try:
+            for idx, frame in reader.frames():
+                result = detector.detect(frame)
+                if not result.has_fire:
+                    consecutive_fire_count = 0
+                    time.sleep(0.05)
+                    continue
+
+                consecutive_fire_count += 1
+                logger.debug(
+                    "[%s] Frame %d: fire (%.2f)  ardışık=%d/%d",
+                    entry.name, idx, result.confidence,
+                    consecutive_fire_count, consecutive_required,
                 )
-                time.sleep(0.05)
-                continue
 
-            # Set cooldown before sending so duplicate is impossible even if send is slow or fails
-            last_incident_at = now
-            consecutive_fire_count = 0
-            cooldown_until = now + timedelta(seconds=cooldown_seconds)
-            logger.info(
-                "[%s] Incident triggered at frame %d (confidence=%.2f). Sending to backend. Cooldown until %s (%.0fs).",
-                cam.name,
-                idx,
-                result.confidence,
-                cooldown_until.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                cooldown_seconds,
-            )
-            notifier.send_incident(cam.id, frame, result.confidence)
-            logger.info(
-                "[%s] Incident sent at %s; next allowed at %s.",
-                cam.name,
-                now.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                cooldown_until.strftime("%Y-%m-%dT%H:%M:%SZ"),
-            )
-    finally:
-        reader.release()
-        logger.info("Camera loop finished for %s", cam.name)
+                if consecutive_fire_count < consecutive_required:
+                    time.sleep(0.05)
+                    continue
+
+                now = _utc_now()
+                next_allowed_at = (
+                    last_incident_at + timedelta(seconds=cooldown_seconds)
+                    if last_incident_at else None
+                )
+                if next_allowed_at and now < next_allowed_at:
+                    remaining = (next_allowed_at - now).total_seconds()
+                    logger.debug("[%s] Cooldown: %.1fs kaldı.", entry.name, remaining)
+                    time.sleep(0.05)
+                    continue
+
+                last_incident_at = now
+                consecutive_fire_count = 0
+                logger.info(
+                    "[%s] YANGIN TESPİT EDİLDİ! frame=%d  confidence=%.2f",
+                    entry.name, idx, result.confidence,
+                )
+                notifier.send_incident(entry.camera_id, frame, result.confidence)
+
+        except Exception as exc:
+            logger.warning("[%s] Stream hatası: %s — yeniden bağlanılıyor", entry.name, exc)
+        finally:
+            reader.release()
+
+        # Bağlantı koptu, kısa bekleyip yeniden bağlan
+        delay = _RETRY_DELAYS[min(retry_idx, len(_RETRY_DELAYS) - 1)]
+        logger.info("[%s] %ds sonra yeniden bağlanılıyor...", entry.name, delay)
+        retry_idx = min(retry_idx + 1, len(_RETRY_DELAYS) - 1)
+        time.sleep(delay)
 
 
 def main() -> None:
     settings = get_settings()
-    detector = MockFireDetector(
-        fire_threshold=settings.detection_fire_ratio_threshold,
-        min_fire_area_ratio=settings.detection_min_fire_area_ratio,
-        confidence_threshold=settings.detection_confidence_threshold,
-    )
+
+    # ── Detector seç ──────────────────────────────────────────
+    mode = (settings.detector_mode or "mock").strip().lower()
+    if mode == "cnn":
+        from .cnn_detector import CNNFireDetector
+        detector: BaseFireDetector = CNNFireDetector(
+            model_path=settings.cnn_model_path,
+            threshold=settings.cnn_threshold,
+        )
+        logger.info("CNN detector yüklendi. model=%s", settings.cnn_model_path or "(yok)")
+    elif mode == "yolo":
+        from .yolo_detector import YOLOFireDetector
+        detector = YOLOFireDetector(
+            model_path=settings.yolo_model_path,
+            confidence_threshold=settings.yolo_confidence_threshold,
+            imgsz=settings.yolo_imgsz,
+        )
+        logger.info("YOLO detector yüklendi. model=%s", settings.yolo_model_path or "(yok)")
+    else:
+        detector = MockFireDetector(
+            fire_threshold=settings.detection_fire_ratio_threshold,
+            min_fire_area_ratio=settings.detection_min_fire_area_ratio,
+            confidence_threshold=settings.detection_confidence_threshold,
+        )
+        logger.info("Mock (HSV) detector kullanılıyor.")
+
     notifier = BackendNotifier(settings=settings)
 
-    threads: list[threading.Thread] = []
-    for cam in settings.cameras:
-        t = threading.Thread(
+    # ── Thread factory ─────────────────────────────────────────
+    def make_thread(entry: CameraEntry) -> threading.Thread:
+        return threading.Thread(
             target=camera_loop,
             args=(
-                cam,
+                entry,
                 settings.cooldown_seconds,
                 settings.detection_consecutive_frames,
                 detector,
                 notifier,
             ),
-            name=f"camera-{cam.id}",
+            name=f"camera-{entry.camera_id}",
             daemon=True,
         )
-        threads.append(t)
-        t.start()
 
-    if not threads:
-        logger.warning("No cameras configured; exiting.")
-        return
+    # ── Kamera yöneticisi ──────────────────────────────────────
+    manager = DynamicCameraManager(
+        backend_url=settings.backend_base_url,
+        api_key=settings.detector_api_key,
+        thread_factory=make_thread,
+    )
 
-    logger.info("Detector service started with %d camera(s). Press Ctrl+C to stop.", len(threads))
+    logger.info(
+        "Detector servisi başlatıldı. Backend: %s  Mod: %s",
+        settings.backend_base_url, mode,
+    )
+    logger.info("Backend'deki kameralar her %d saniyede otomatik yüklenir.", 30)
+
     try:
-        # Keep main thread alive while camera threads run
-        while True:
-            time.sleep(1)
+        # İlk sync hemen, sonra her 30 saniyede
+        manager.run_loop()
     except KeyboardInterrupt:
-        logger.info("Shutdown requested by user.")
+        logger.info("Durduruldu.")
 
 
 if __name__ == "__main__":
     main()
-

@@ -3,4 +3,9 @@ numpy==1.26.4
 requests==2.31.0
 pydantic==2.6.1
 pydantic-settings==2.1.0
+# Optional: only required when DETECTOR_MODE=cnn
+# torch>=2.0.0
+# torchvision>=0.15.0
+# Optional: only required when DETECTOR_MODE=yolo
+# ultralytics>=8.0.0
 

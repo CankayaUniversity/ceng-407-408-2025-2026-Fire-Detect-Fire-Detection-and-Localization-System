@@ -12,6 +12,7 @@ from app.schemas.incident import (
 )
 from app.services.incident_service import IncidentService
 from app.services.camera_service import CameraService
+from app.websocket_manager import manager
 
 router = APIRouter(prefix="/incidents", tags=["incidents"])
 
@@ -74,6 +75,19 @@ async def create_detected_incident(
         snapshot_url=data.snapshot_url,
     )
     incident = await IncidentService.get_by_id(db, incident.id)
+
+    # Tüm bağlı mobil/web client'lara gerçek zamanlı bildirim gönder
+    await manager.broadcast({
+        "type": "fire_detected",
+        "incident_id": incident.id,
+        "camera_id": incident.camera_id,
+        "camera_name": camera.name,
+        "camera_location": camera.location,
+        "confidence": data.confidence,
+        "snapshot_url": data.snapshot_url,
+        "detected_at": incident.detected_at.isoformat() if incident.detected_at else None,
+    })
+
     # Response includes stream info (caller is detector; no role to hide)
     return IncidentResponse(
         id=incident.id,

@@ -40,13 +40,33 @@ class Settings(BaseSettings):
     )
 
     # Cooldown in seconds between incidents for same camera
-    cooldown_seconds: int = 60
+    cooldown_seconds: int = 10
+
+    # Detector implementation: "mock" (HSV heuristic), "cnn", or "yolo"
+    detector_mode: str = "mock"
+
+    # CNN model path (relative to detector/ dir or absolute)
+    # Set via env: CNN_MODEL_PATH=training/fire_model.pt
+    cnn_model_path: str | None = None
+
+    # CNN confidence threshold override (None = use value from training metadata JSON)
+    cnn_threshold: float | None = None
+
+    # YOLO model path (relative to detector/ dir or absolute)
+    # Set via env: YOLO_MODEL_PATH=training/best.pt
+    yolo_model_path: str | None = None
+
+    # YOLO confidence threshold for incident creation
+    yolo_confidence_threshold: float = 0.4
+
+    # YOLO input image size used during inference
+    yolo_imgsz: int = 512
 
     # Detection tuning (reduce false alarms)
-    detection_fire_ratio_threshold: float = 0.02  # min ratio of fire-like pixels to total
-    detection_min_fire_area_ratio: float = 0.005  # min ratio of largest fire blob to total (filter tiny spots)
-    detection_confidence_threshold: float = 0.25  # min confidence to count frame as "fire"
-    detection_consecutive_frames: int = 5  # require this many consecutive fire frames before incident
+    detection_fire_ratio_threshold: float = 0.005  # min ratio of fire-like pixels to total
+    detection_min_fire_area_ratio: float = 0.0  # min ratio of largest fire blob to total (filter tiny spots)
+    detection_confidence_threshold: float = 0.1  # min confidence to count frame as "fire"
+    detection_consecutive_frames: int = 3  # require this many consecutive fire frames before incident
 
     class Config:
         env_file = ".env"

@@ -130,6 +130,17 @@ class NotificationService extends ChangeNotifier {
         _fireStream.add(event);
         notifyListeners();
         _showLocalNotification(event);
+      } else if (data['type'] == 'fire_confirmed') {
+        // FCM natively handles this on Mobile. To prevent double notifications,
+        // we strictly limit this WebSocket fallback to Web and Desktop emulators.
+        if (kIsWeb ||
+            (defaultTargetPlatform != TargetPlatform.android &&
+             defaultTargetPlatform != TargetPlatform.iOS)) {
+          showPushNotification(
+            '🚨 YANGIN ONAYLANDI',
+            data['message'] as String? ?? 'Acil durum! Yangın alarmı onaylandı.',
+          );
+        }
       }
     } catch (e) {
       debugPrint('[WS] Mesaj parse hatası: $e');
@@ -157,6 +168,43 @@ class NotificationService extends ChangeNotifier {
       event.incidentId,
       '🔥 YANGIN TESPİT EDİLDİ$pct',
       '${event.cameraName}${event.cameraLocation != null ? " • ${event.cameraLocation}" : ""}',
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          channel.id,
+          channel.name,
+          channelDescription: channel.description,
+          importance: Importance.max,
+          priority: Priority.high,
+          color: const Color(0xFFFF3D00),
+          largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+        ),
+        iOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      ),
+    );
+  }
+
+  Future<void> showPushNotification(String title, String body) async {
+    const channel = AndroidNotificationChannel(
+      'push_alerts',
+      'Genel Bildirimler',
+      description: 'Sistem push bildirimleri',
+      importance: Importance.max,
+      playSound: true,
+      enableVibration: true,
+    );
+    await _localNotif
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(channel);
+
+    await _localNotif.show(
+      DateTime.now().millisecond,
+      title,
+      body,
       NotificationDetails(
         android: AndroidNotificationDetails(
           channel.id,

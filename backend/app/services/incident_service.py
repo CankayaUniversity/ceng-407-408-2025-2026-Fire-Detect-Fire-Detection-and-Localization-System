@@ -68,6 +68,48 @@ class IncidentService:
         incident.confirmed_by = user_id
         await db.flush()
         await db.refresh(incident)
+
+        from app.models.user import User
+        from app.models.notification import Notification
+        
+        # Fetch target users and dispatch alerts
+        result = await db.execute(
+            select(User).where(User.role.in_([Role.EMPLOYEE, Role.FIRE_RESPONSE_UNIT]))
+        )
+        target_users = result.scalars().all()
+        
+        camera_name = incident.camera.name if incident.camera else "Unknown Camera"
+        message = f"🚨 FIRE CONFIRMED at {camera_name}. Please follow safety instructions and proceed to the nearest exit immediately!"
+        
+        for u in target_users:
+            notif = Notification(user_id=u.id, incident_id=incident.id, message=message)
+            db.add(notif)
+            
+            if u.fcm_token:
+                try:
+                    from firebase_admin import messaging
+                    msg = messaging.Message(
+                        notification=messaging.Notification(
+                            title="🔥 Flame Scope Alert",
+                            body=message,
+                        ),
+                        token=u.fcm_token,
+                    )
+                    messaging.send(msg)
+                except Exception as e:
+                    import logging
+                    logging.getLogger(__name__).error(f"FCM send failed for user {u.id}: {e}")
+            
+        await db.flush()
+        
+        from app.websocket_manager import manager
+        await manager.broadcast({
+            "type": "fire_confirmed",
+            "incident_id": incident.id,
+            "camera_name": camera_name,
+            "message": message
+        })
+        
         return incident
 
     @staticmethod

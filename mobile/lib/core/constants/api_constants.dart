@@ -50,11 +50,15 @@ String? normalizeBackendAssetUrl(String? rawUrl) {
 
 class ApiEndpoints {
   static const String login = '/auth/login';
+  static const String refresh = '/auth/refresh';
+  static const String logout = '/auth/logout';
   static const String me = '/me';
   static const String cameras = '/cameras';
   static const String incidents = '/incidents';
   static const String users = '/users';
+  static const String notifications = '/notifications';
 
   static String userDeactivate(int userId) => '/users/$userId/deactivate';
   static String userReactivate(int userId) => '/users/$userId/reactivate';
+  static String markNotificationRead(int id) => '/notifications/$id/read';
 }

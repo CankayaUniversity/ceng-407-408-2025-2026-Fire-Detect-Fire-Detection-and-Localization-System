@@ -7,7 +7,8 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import get_settings
 from app.database.session import init_db
-from app.routers import auth, me, cameras, incidents, users, ws
+from app.routers import auth, me, cameras, incidents, users, ws, notifications
+from app.core.firebase import init_firebase
 
 settings = get_settings()
 
@@ -15,6 +16,7 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    init_firebase()
     yield
     # shutdown if needed
 
@@ -38,6 +40,7 @@ app.include_router(users.router)
 app.include_router(cameras.router)
 app.include_router(incidents.router)
 app.include_router(ws.router)
+app.include_router(notifications.router)
 
 # Snapshot dosyalarını statik olarak sun
 # Backend: backend/, snapshot'lar: ../snapshots/ (proje kökü)

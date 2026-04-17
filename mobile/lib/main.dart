@@ -5,8 +5,41 @@ import 'package:flamescope/core/notifications/notification_service.dart';
 import 'package:flamescope/core/router/app_router.dart';
 import 'package:flamescope/core/theme/app_theme.dart';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flamescope/firebase_options.dart';
+
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Background processing here
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    await FirebaseMessaging.instance.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      if (message.notification != null) {
+        NotificationService().showPushNotification(
+          message.notification!.title ?? 'Bildirim',
+          message.notification!.body ?? '',
+        );
+      }
+    });
+  } catch (e) {
+    debugPrint("Firebase init failed: $e");
+  }
 
   // Bildirimleri başlat
   await NotificationService().init();

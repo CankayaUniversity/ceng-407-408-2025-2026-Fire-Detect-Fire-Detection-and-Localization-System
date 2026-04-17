@@ -16,6 +16,7 @@ import 'package:flamescope/features/users/user_list_screen.dart';
 import 'package:flamescope/features/users/user_create_screen.dart';
 import 'package:flamescope/features/stream/live_stream_screen.dart';
 import 'package:flamescope/features/emergency/emergency_alert_screen.dart';
+import 'package:flamescope/features/notifications/notification_list_screen.dart';
 
 class AppRouter {
   static const String splash = '/';
@@ -31,6 +32,7 @@ class AppRouter {
   static const String userCreate = '/users/create';
   static const String liveStream = '/stream';
   static const String emergencyAlert = '/emergency';
+  static const String notificationList = '/notifications';
 
   static String incidentDetailPath(int id) => '/incidents/$id';
   static String liveStreamPath({int? cameraId, int? incidentId}) {
@@ -80,6 +82,7 @@ class AppRouter {
         },
       ),
       GoRoute(path: emergencyAlert, builder: (_, __) => const EmergencyAlertScreen()),
+      GoRoute(path: notificationList, builder: (_, __) => const NotificationListScreen()),
     ],
     );
   }

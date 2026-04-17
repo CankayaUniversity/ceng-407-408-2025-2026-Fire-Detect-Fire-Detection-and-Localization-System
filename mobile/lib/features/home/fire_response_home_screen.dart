@@ -39,7 +39,7 @@ class FireResponseHomeScreen extends StatelessWidget {
             leading: const Icon(Icons.emergency),
             title: const Text('Acil Durum Bildirimleri'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(AppRouter.emergencyAlert),
+            onTap: () => context.push(AppRouter.notificationList),
           ),
         ],
       ),

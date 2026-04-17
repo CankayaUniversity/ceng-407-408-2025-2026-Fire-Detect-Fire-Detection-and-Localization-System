@@ -39,7 +39,7 @@ class EmployeeHomeScreen extends StatelessWidget {
             leading: const Icon(Icons.notifications_active),
             title: const Text('Acil Durum Bildirimleri'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(AppRouter.emergencyAlert),
+            onTap: () => context.push(AppRouter.notificationList),
           ),
         ],
       ),

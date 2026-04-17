@@ -15,9 +15,13 @@ class Settings(BaseSettings):
     secret_key: str = "change-me-in-production-use-env"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
+    refresh_token_expire_days: int = 7
 
     # Detector webhook (optional API key for POST /incidents/detected)
     detector_api_key: str | None = None
+
+    # Firebase Admin SDK
+    firebase_credentials_path: str = "firebase-adminsdk.json"
 
     class Config:
         env_file = ".env"

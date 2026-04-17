@@ -16,10 +16,14 @@ class UserResponse(BaseModel):
     email: str
     role: Role
     is_active: bool = True
+    fcm_token: str | None = None
     created_at: datetime
 
     class Config:
         from_attributes = True
+
+class FCMTokenUpdate(BaseModel):
+    fcm_token: str | None
 
 
 class UserMe(BaseModel):

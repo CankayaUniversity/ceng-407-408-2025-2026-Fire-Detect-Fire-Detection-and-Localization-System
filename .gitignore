@@ -52,3 +52,7 @@ mobile/*.iml
 # OS
 .DS_Store
 Thumbs.db
+
+# Log dosyaları
+*.log
+*.err.log

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1065859123513",
+    "project_id": "flamescope-a1274",
+    "storage_bucket": "flamescope-a1274.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1065859123513:android:416dcbdf8b001cdccf00e8",
+        "android_client_info": {
+          "package_name": "com.example.flamescope_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBoPmIITxCGtaIY1ckaIqlT_B74tCVdeUo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -46,6 +46,7 @@ mobile/*.iml
 # IDE
 .idea/
 .vscode/
+.vs/
 *.swp
 *.swo
 

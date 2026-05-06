@@ -1,7 +1,12 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 
-/// Bilgisayarın LAN IP'si (fiziksel telefon için):
-const String kLanIp = '192.168.1.200';
+/// Backend host.
+/// Physical phones should pass --dart-define=FLAMESCOPE_API_HOST=<LAN_IP>.
+/// The default is Android emulator's host alias.
+const String kLanIp = String.fromEnvironment(
+  'FLAMESCOPE_API_HOST',
+  defaultValue: '10.0.2.2',
+);
 
 /// Backend API base URL.
 /// - Web (Chrome): localhost:8000

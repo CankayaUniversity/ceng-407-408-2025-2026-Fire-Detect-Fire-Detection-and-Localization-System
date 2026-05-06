@@ -52,7 +52,7 @@ class _CameraListScreenState extends State<CameraListScreen> {
   Future<void> _showAddDialog() async {
     final nameCtrl = TextEditingController();
     final locationCtrl = TextEditingController();
-    final rtspCtrl = TextEditingController(text: 'rtsp://192.168.1.34:8554/stream');
+    final rtspCtrl = TextEditingController(text: 'rtsp://192.168.1.35:8555/webcam');
     String? error;
 
     final confirmed = await showDialog<bool>(
@@ -94,7 +94,7 @@ class _CameraListScreenState extends State<CameraListScreen> {
                   controller: rtspCtrl,
                   decoration: const InputDecoration(
                     labelText: 'RTSP URL',
-                    hintText: 'rtsp://192.168.1.X:8554/stream',
+                    hintText: 'rtsp://192.168.1.X:8555/webcam',
                     prefixIcon: Icon(Icons.link),
                     border: OutlineInputBorder(),
                   ),
@@ -103,7 +103,7 @@ class _CameraListScreenState extends State<CameraListScreen> {
                 // Hızlı IP girişi
               _IpShortcut(
                 onIpSelected: (ip) {
-                  rtspCtrl.text = 'rtsp://$ip:8554/stream';
+                  rtspCtrl.text = 'rtsp://$ip:8555/webcam';
                   setS(() {});
                 },
               ),
@@ -170,7 +170,7 @@ class _CameraListScreenState extends State<CameraListScreen> {
 
   // ── RTSP URL güncelle dialog ────────────────────────────────
   Future<void> _showEditRtspDialog(CameraModel cam) async {
-    final rtspCtrl = TextEditingController(text: cam.rtspUrl ?? 'rtsp://192.168.1.34:8554/stream');
+    final rtspCtrl = TextEditingController(text: cam.rtspUrl ?? 'rtsp://192.168.1.35:8555/webcam');
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -184,7 +184,7 @@ class _CameraListScreenState extends State<CameraListScreen> {
                 controller: rtspCtrl,
                 decoration: const InputDecoration(
                   labelText: 'Yeni RTSP URL',
-                    hintText: 'rtsp://192.168.1.X:8554/stream',
+                    hintText: 'rtsp://192.168.1.X:8555/webcam',
                     prefixIcon: Icon(Icons.link),
                     border: OutlineInputBorder(),
                   ),
@@ -192,7 +192,7 @@ class _CameraListScreenState extends State<CameraListScreen> {
                 const SizedBox(height: 8),
                 _IpShortcut(
                   onIpSelected: (ip) {
-                    rtspCtrl.text = 'rtsp://$ip:8554/stream';
+                    rtspCtrl.text = 'rtsp://$ip:8555/webcam';
                     setS(() {});
                   },
                 ),

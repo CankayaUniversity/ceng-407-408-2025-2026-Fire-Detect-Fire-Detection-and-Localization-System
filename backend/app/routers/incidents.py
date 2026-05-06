@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from pathlib import PurePath, PureWindowsPath
 
 from app.database.session import get_db
 from app.auth.dependencies import get_current_user, require_roles, verify_detector_api_key
@@ -15,6 +16,24 @@ from app.services.camera_service import CameraService
 from app.websocket_manager import manager
 
 router = APIRouter(prefix="/incidents", tags=["incidents"])
+
+
+def _normalize_snapshot_url(snapshot_url: str | None) -> str | None:
+    if not snapshot_url:
+        return None
+
+    value = snapshot_url.strip()
+    if not value:
+        return None
+
+    if value.startswith(("http://", "https://", "/snapshots/")):
+        return value
+
+    normalized = value.replace("\\", "/")
+    if normalized.startswith("snapshots/") or "/snapshots/" in normalized:
+        return f"/snapshots/{PurePath(normalized).name}"
+
+    return f"/snapshots/{PureWindowsPath(value).name}"
 
 
 def _incident_to_response(incident, current_user: User) -> IncidentResponse:
@@ -68,11 +87,12 @@ async def create_detected_incident(
     camera = await CameraService.get_by_id(db, data.camera_id)
     if not camera:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Camera not found")
+    snapshot_url = _normalize_snapshot_url(data.snapshot_url)
     incident = await IncidentService.create_detected(
         db,
         camera_id=data.camera_id,
         confidence=data.confidence,
-        snapshot_url=data.snapshot_url,
+        snapshot_url=snapshot_url,
     )
     incident = await IncidentService.get_by_id(db, incident.id)
 
@@ -84,7 +104,7 @@ async def create_detected_incident(
         "camera_name": camera.name,
         "camera_location": camera.location,
         "confidence": data.confidence,
-        "snapshot_url": data.snapshot_url,
+        "snapshot_url": snapshot_url,
         "detected_at": incident.detected_at.isoformat() if incident.detected_at else None,
     })
 

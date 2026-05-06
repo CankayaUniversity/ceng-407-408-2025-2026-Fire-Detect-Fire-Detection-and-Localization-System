@@ -43,9 +43,12 @@ def camera_loop(
 
     retry_idx = 0
     last_incident_at: datetime | None = None
+    clear_frames_required = max(5, consecutive_required)
 
     while True:
         consecutive_fire_count = 0
+        consecutive_clear_count = clear_frames_required
+        armed = True
 
         # ── Bağlan ────────────────────────────────────────────────
         try:
@@ -69,9 +72,14 @@ def camera_loop(
                 result = detector.detect(frame)
                 if not result.has_fire:
                     consecutive_fire_count = 0
+                    consecutive_clear_count += 1
+                    if not armed and consecutive_clear_count >= clear_frames_required:
+                        armed = True
+                        logger.info("[%s] Detector tekrar hazir.", entry.name)
                     time.sleep(0.05)
                     continue
 
+                consecutive_clear_count = 0
                 consecutive_fire_count += 1
                 logger.debug(
                     "[%s] Frame %d: fire (%.2f)  ardışık=%d/%d",
@@ -80,6 +88,10 @@ def camera_loop(
                 )
 
                 if consecutive_fire_count < consecutive_required:
+                    time.sleep(0.05)
+                    continue
+
+                if not armed:
                     time.sleep(0.05)
                     continue
 
@@ -96,6 +108,7 @@ def camera_loop(
 
                 last_incident_at = now
                 consecutive_fire_count = 0
+                armed = False
                 logger.info(
                     "[%s] YANGIN TESPİT EDİLDİ! frame=%d  confidence=%.2f",
                     entry.name, idx, result.confidence,

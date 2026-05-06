@@ -58,14 +58,19 @@ async def get_camera(
     current_user: User = Depends(require_roles(Role.ADMIN, Role.MANAGER)),
     db: AsyncSession = Depends(get_db),
 ):
-    camera = await CameraService.get_by_id(db, camera_id)
+    camera = await CameraService.get_by_id(
+        db,
+        camera_id,
+        load_incidents=current_user.role == Role.MANAGER,
+    )
     if not camera:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Camera not found")
+    show_stream = CameraService.can_see_stream(current_user.role, camera)
     return CameraResponse(
         id=camera.id,
         name=camera.name,
         location=camera.location,
-        rtsp_url=camera.rtsp_url,
+        rtsp_url=camera.rtsp_url if show_stream else None,
         created_at=camera.created_at,
     )
 

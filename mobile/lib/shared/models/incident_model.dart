@@ -1,5 +1,14 @@
 import 'package:flamescope/core/constants/api_constants.dart';
 
+DateTime? _parseBackendDateTime(dynamic raw) {
+  if (raw is! String || raw.trim().isEmpty) return null;
+  final value = raw.trim();
+  final hasTimeZone =
+      value.endsWith('Z') || RegExp(r'[+-]\d{2}:?\d{2}$').hasMatch(value);
+  final parsed = DateTime.tryParse(hasTimeZone ? value : '${value}Z');
+  return parsed?.toLocal();
+}
+
 class IncidentModel {
   final int id;
   final int cameraId;
@@ -37,8 +46,8 @@ class IncidentModel {
       status: json['status'] as String? ?? 'DETECTED',
       confidence: (json['confidence'] as num?)?.toDouble(),
       snapshotUrl: normalizeBackendAssetUrl(json['snapshot_url'] as String?),
-      detectedAt: json['detected_at'] != null ? DateTime.tryParse(json['detected_at'] as String) : null,
-      confirmedAt: json['confirmed_at'] != null ? DateTime.tryParse(json['confirmed_at'] as String) : null,
+      detectedAt: _parseBackendDateTime(json['detected_at']),
+      confirmedAt: _parseBackendDateTime(json['confirmed_at']),
       confirmedBy: json['confirmed_by'] as int?,
     );
   }

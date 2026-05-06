@@ -20,8 +20,11 @@ class BackendNotifier:
         self.base_url = self.settings.backend_base_url.rstrip("/")
         self.endpoint = self.base_url + self.settings.incidents_detected_path
 
-        # Ensure snapshot directory exists
         snapshot_dir = Path(self.settings.snapshot_dir)
+        if not snapshot_dir.is_absolute():
+            detector_dir = Path(__file__).resolve().parents[1]
+            snapshot_dir = detector_dir / snapshot_dir
+        snapshot_dir = snapshot_dir.resolve()
         snapshot_dir.mkdir(parents=True, exist_ok=True)
         self.snapshot_dir = snapshot_dir
 
@@ -41,14 +44,14 @@ class BackendNotifier:
         """
         Build snapshot_url to send to backend.
 
-        For MVP we simply send the local path. If public_snapshot_base_url
-        is configured, we send that URL instead.
+        By default the backend serves the repository-level snapshots folder at
+        /snapshots, so send a URL path instead of a local filesystem path.
         """
+        filename = os.path.basename(local_path)
         if self.settings.public_snapshot_base_url:
             base = self.settings.public_snapshot_base_url.rstrip("/")
-            filename = os.path.basename(local_path)
             return f"{base}/{filename}"
-        return local_path
+        return f"/snapshots/{filename}"
 
     def send_incident(self, camera_id: int, frame, confidence: float) -> None:
         snapshot_path = self._save_snapshot(camera_id, frame)

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:flamescope/core/auth/auth_service.dart';
 import 'package:flamescope/core/constants/app_constants.dart';
 import 'package:flamescope/core/router/app_router.dart';
+import 'package:flamescope/core/theme/app_theme.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -46,17 +47,76 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.local_fire_department, size: 80, color: Colors.orange),
-            SizedBox(height: 24),
-            Text('Flame Scope', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            SizedBox(height: 16),
-            CircularProgressIndicator(),
-          ],
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Scaffold(
+      body: Container(
+        width: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.deepNavy,
+              AppColors.surface,
+              AppColors.navy,
+            ],
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: 150,
+                    height: 150,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          AppColors.orange.withValues(alpha: 0.30),
+                          AppColors.orange.withValues(alpha: 0),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    Icons.local_fire_department,
+                    size: 72,
+                    color: colorScheme.secondary,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Flame Scope',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Sistem başlatılıyor',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: 36,
+                height: 36,
+                child: CircularProgressIndicator(
+                  strokeWidth: 3,
+                  color: colorScheme.secondary,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

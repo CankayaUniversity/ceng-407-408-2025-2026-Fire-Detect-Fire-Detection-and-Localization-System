@@ -35,7 +35,7 @@ class BackendNotifier:
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
         filename = f"camera_{camera_id}_{timestamp}.jpg"
         path = self.snapshot_dir / filename
-        ok = cv2.imwrite(str(path), frame)
+        ok = cv2.imwrite(str(path), frame, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
         if not ok:
             logger.warning("Failed to write snapshot to %s", path)
         return str(path)

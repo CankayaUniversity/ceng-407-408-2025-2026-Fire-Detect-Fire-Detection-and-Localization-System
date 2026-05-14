@@ -60,10 +60,16 @@ class ApiEndpoints {
   static const String me = '/me';
   static const String cameras = '/cameras';
   static const String incidents = '/incidents';
+  static const String incidentSummary = '/incidents/analytics/summary';
   static const String users = '/users';
   static const String notifications = '/notifications';
 
   static String userDeactivate(int userId) => '/users/$userId/deactivate';
   static String userReactivate(int userId) => '/users/$userId/reactivate';
   static String markNotificationRead(int id) => '/notifications/$id/read';
+  static String incidentSafetyReport(int id) => '/incidents/$id/safety-report';
+  static String incidentResponseUpdate(int id) =>
+      '/incidents/$id/response-update';
+  static String restartLobbyDemo(int cameraId) =>
+      '/cameras/$cameraId/demo/restart-lobby';
 }

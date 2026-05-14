@@ -55,4 +55,28 @@ class IncidentModel {
   bool get canStream => rtspUrl != null && rtspUrl!.isNotEmpty;
   bool get isDetected => status == 'DETECTED';
   bool get isConfirmed => status == 'CONFIRMED';
+
+  String get riskLevel {
+    final score = confidence;
+    if (score == null) return 'UNKNOWN';
+    if (score >= 0.97) return 'CRITICAL';
+    if (score >= 0.80) return 'HIGH';
+    if (score >= 0.60) return 'MEDIUM';
+    return 'LOW';
+  }
+
+  String get riskLevelLabel {
+    switch (riskLevel) {
+      case 'CRITICAL':
+        return 'Kritik Risk';
+      case 'HIGH':
+        return 'Yuksek Risk';
+      case 'MEDIUM':
+        return 'Orta Risk';
+      case 'LOW':
+        return 'Dusuk Risk';
+      default:
+        return 'Risk Bilinmiyor';
+    }
+  }
 }

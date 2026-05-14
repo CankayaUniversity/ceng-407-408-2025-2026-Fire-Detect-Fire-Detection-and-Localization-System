@@ -1,10 +1,10 @@
 from datetime import datetime, timezone
+
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.models.incident import Incident, IncidentStatus
-from app.models.camera import Camera
 from app.models.user import Role
 
 
@@ -50,8 +50,22 @@ class IncidentService:
         return list(result.unique().scalars().all())
 
     @staticmethod
+    async def summary(db: AsyncSession) -> dict:
+        total = await db.scalar(select(func.count(Incident.id)))
+        detected = await db.scalar(select(func.count(Incident.id)).where(Incident.status == IncidentStatus.DETECTED))
+        confirmed = await db.scalar(select(func.count(Incident.id)).where(Incident.status == IncidentStatus.CONFIRMED))
+        dismissed = await db.scalar(select(func.count(Incident.id)).where(Incident.status == IncidentStatus.DISMISSED))
+        avg_risk = await db.scalar(select(func.avg(Incident.confidence)).where(Incident.confidence.is_not(None)))
+        return {
+            "total": total or 0,
+            "detected": detected or 0,
+            "confirmed": confirmed or 0,
+            "dismissed": dismissed or 0,
+            "average_risk": float(avg_risk) if avg_risk is not None else None,
+        }
+
+    @staticmethod
     def can_see_stream_for_incident(role: Role, incident: Incident) -> bool:
-        """Include rtsp_url for this incident only if user may stream."""
         if role == Role.ADMIN:
             return True
         if role == Role.MANAGER and incident.status in (IncidentStatus.DETECTED, IncidentStatus.CONFIRMED):
@@ -60,57 +74,120 @@ class IncidentService:
 
     @staticmethod
     async def confirm(db: AsyncSession, incident_id: int, user_id: int) -> Incident | None:
+        return await IncidentService._confirm(
+            db,
+            incident_id,
+            confirmed_by=user_id,
+            reason="manager",
+            target_roles={Role.EMPLOYEE, Role.FIRE_RESPONSE_UNIT},
+        )
+
+    @staticmethod
+    async def auto_confirm_if_pending(
+        db: AsyncSession,
+        incident_id: int,
+        *,
+        reason: str,
+        target_roles: set[Role] | None = None,
+    ) -> Incident | None:
+        return await IncidentService._confirm(
+            db,
+            incident_id,
+            confirmed_by=None,
+            reason=reason,
+            target_roles=target_roles or set(Role),
+        )
+
+    @staticmethod
+    async def _confirm(
+        db: AsyncSession,
+        incident_id: int,
+        *,
+        confirmed_by: int | None,
+        reason: str,
+        target_roles: set[Role],
+    ) -> Incident | None:
         incident = await IncidentService.get_by_id(db, incident_id)
         if not incident or incident.status != IncidentStatus.DETECTED:
             return None
+
         incident.status = IncidentStatus.CONFIRMED
         incident.confirmed_at = datetime.now(timezone.utc)
-        incident.confirmed_by = user_id
+        incident.confirmed_by = confirmed_by
         await db.flush()
         await db.refresh(incident)
 
-        from app.models.user import User
-        from app.models.notification import Notification
-        
-        # Fetch target users and dispatch alerts
-        result = await db.execute(
-            select(User).where(User.role.in_([Role.EMPLOYEE, Role.FIRE_RESPONSE_UNIT]))
+        await IncidentService._dispatch_confirmed_alert(
+            db,
+            incident,
+            reason=reason,
+            target_roles=target_roles,
         )
+        return incident
+
+    @staticmethod
+    async def _dispatch_confirmed_alert(
+        db: AsyncSession,
+        incident: Incident,
+        *,
+        reason: str,
+        target_roles: set[Role],
+    ) -> None:
+        from app.models.notification import Notification
+        from app.models.user import User
+        from app.websocket_manager import manager
+
+        result = await db.execute(select(User).where(User.role.in_(list(target_roles))))
         target_users = result.scalars().all()
-        
-        camera_name = incident.camera.name if incident.camera else "Unknown Camera"
-        message = f"🚨 FIRE CONFIRMED at {camera_name}. Please follow safety instructions and proceed to the nearest exit immediately!"
-        
-        for u in target_users:
-            notif = Notification(user_id=u.id, incident_id=incident.id, message=message)
-            db.add(notif)
-            
-            if u.fcm_token:
+
+        camera_name = incident.camera.name if incident.camera else "Bilinmeyen Kamera"
+        camera_location = incident.camera.location if incident.camera else None
+        location_text = f" - {camera_location}" if camera_location else ""
+        risk_text = f" Risk skoru: %{round(incident.confidence * 100)}." if incident.confidence is not None else ""
+        reason_text = {
+            "manager": "Yonetici tarafindan onaylandi",
+            "critical_risk": "Kritik risk seviyesi nedeniyle otomatik acil alarma yukseltildi",
+            "timeout": "Yonetici yaniti gelmedigi icin otomatik acil alarma yukseltildi",
+        }.get(reason, "Acil durum alarmi onaylandi")
+        message = (
+            f"{reason_text}: {camera_name}{location_text}."
+            f"{risk_text} Lutfen en yakin guvenli cikis yonlendirmelerini takip edin."
+        )
+
+        for user in target_users:
+            db.add(Notification(user_id=user.id, incident_id=incident.id, message=message))
+
+            if user.fcm_token:
                 try:
                     from firebase_admin import messaging
+
                     msg = messaging.Message(
                         notification=messaging.Notification(
-                            title="🔥 Flame Scope Alert",
+                            title="FlameScope Acil Durum",
                             body=message,
                         ),
-                        token=u.fcm_token,
+                        token=user.fcm_token,
                     )
                     messaging.send(msg)
-                except Exception as e:
+                except Exception as exc:
                     import logging
-                    logging.getLogger(__name__).error(f"FCM send failed for user {u.id}: {e}")
-            
+
+                    logging.getLogger(__name__).error("FCM send failed for user %s: %s", user.id, exc)
+
         await db.flush()
-        
-        from app.websocket_manager import manager
-        await manager.broadcast({
+
+        await manager.send_to_roles({
             "type": "fire_confirmed",
             "incident_id": incident.id,
+            "camera_id": incident.camera_id,
             "camera_name": camera_name,
-            "message": message
-        })
-        
-        return incident
+            "camera_location": camera_location,
+            "confidence": incident.confidence,
+            "snapshot_url": incident.snapshot_url,
+            "confirmed_at": incident.confirmed_at.isoformat() if incident.confirmed_at else None,
+            "message": message,
+            "confirmation_reason": reason,
+        }, target_roles)
 
     @staticmethod
     async def dismiss(db: AsyncSession, incident_id: int) -> Incident | None:

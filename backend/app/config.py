@@ -20,6 +20,11 @@ class Settings(BaseSettings):
     # Detector webhook (optional API key for POST /incidents/detected)
     detector_api_key: str | None = None
 
+    # Incident decision policy
+    critical_risk_threshold: float = 0.97
+    auto_escalation_risk_threshold: float = 0.80
+    auto_escalation_seconds: int = 30
+
     # Firebase Admin SDK
     firebase_credentials_path: str = "firebase-adminsdk.json"
 

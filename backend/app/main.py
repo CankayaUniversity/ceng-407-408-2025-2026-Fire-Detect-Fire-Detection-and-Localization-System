@@ -48,6 +48,10 @@ _SNAPSHOT_DIR = Path(__file__).resolve().parent.parent.parent / "snapshots"
 _SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/snapshots", StaticFiles(directory=str(_SNAPSHOT_DIR)), name="snapshots")
 
+_DEMO_VIDEO_DIR = Path(__file__).resolve().parent.parent.parent / "demo-videos"
+if _DEMO_VIDEO_DIR.exists():
+    app.mount("/demo-videos", StaticFiles(directory=str(_DEMO_VIDEO_DIR)), name="demo-videos")
+
 
 @app.get("/health")
 async def health():

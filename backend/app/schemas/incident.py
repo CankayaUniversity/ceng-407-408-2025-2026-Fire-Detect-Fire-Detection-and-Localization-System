@@ -1,6 +1,7 @@
 from datetime import datetime
 from pydantic import BaseModel
 from app.models.incident import IncidentStatus
+from app.models.incident_update import ResponseStatus, SafetyStatus
 
 
 class IncidentCreateDetected(BaseModel):
@@ -28,3 +29,11 @@ class IncidentResponse(BaseModel):
 
 class IncidentListResponse(BaseModel):
     incidents: list[IncidentResponse]
+
+
+class SafetyReportRequest(BaseModel):
+    status: SafetyStatus
+
+
+class ResponseUpdateRequest(BaseModel):
+    status: ResponseStatus

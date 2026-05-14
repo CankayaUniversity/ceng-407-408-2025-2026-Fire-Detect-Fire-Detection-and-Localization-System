@@ -160,7 +160,7 @@ class _FireAlertBannerState extends State<_FireAlertBanner>
   Widget build(BuildContext context) {
     if (_current == null) return const SizedBox.shrink();
     final pct = _current!.confidence != null
-        ? ' • %${(_current!.confidence! * 100).toStringAsFixed(0)}'
+        ? ' • Risk %${(_current!.confidence! * 100).toStringAsFixed(0)}'
         : '';
     return Positioned(
       top: 0,

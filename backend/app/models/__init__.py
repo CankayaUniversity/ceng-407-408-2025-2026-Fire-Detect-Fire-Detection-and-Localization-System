@@ -3,5 +3,23 @@ from app.models.camera import Camera
 from app.models.incident import Incident, IncidentStatus
 from app.models.refresh_token import RefreshToken
 from app.models.notification import Notification
+from app.models.incident_update import (
+    IncidentResponseUpdate,
+    IncidentSafetyReport,
+    ResponseStatus,
+    SafetyStatus,
+)
 
-__all__ = ["User", "Role", "Camera", "Incident", "IncidentStatus", "RefreshToken", "Notification"]
+__all__ = [
+    "User",
+    "Role",
+    "Camera",
+    "Incident",
+    "IncidentStatus",
+    "RefreshToken",
+    "Notification",
+    "IncidentResponseUpdate",
+    "IncidentSafetyReport",
+    "ResponseStatus",
+    "SafetyStatus",
+]

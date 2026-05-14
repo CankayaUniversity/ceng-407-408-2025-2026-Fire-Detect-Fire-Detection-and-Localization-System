@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:flamescope/core/auth/auth_service.dart';
 import 'package:flamescope/core/router/app_router.dart';
+import 'package:flamescope/features/home/widgets/incident_summary_panel.dart';
 
 class ManagerHomeScreen extends StatelessWidget {
   const ManagerHomeScreen({super.key});
@@ -34,6 +35,8 @@ class ManagerHomeScreen extends StatelessWidget {
                 subtitle: Text(user.email),
               ),
             ),
+          const SizedBox(height: 16),
+          const IncidentSummaryPanel(),
           const SizedBox(height: 16),
           ListTile(
             leading: const Icon(Icons.warning_amber),

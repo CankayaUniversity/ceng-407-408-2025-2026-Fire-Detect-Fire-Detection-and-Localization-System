@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:flamescope/core/auth/auth_service.dart';
 import 'package:flamescope/core/router/app_router.dart';
+import 'package:flamescope/features/home/widgets/incident_summary_panel.dart';
 
 class AdminHomeScreen extends StatelessWidget {
   const AdminHomeScreen({super.key});
@@ -26,6 +27,8 @@ class AdminHomeScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          const IncidentSummaryPanel(),
+          const SizedBox(height: 16),
           ListTile(
             leading: const Icon(Icons.people_outline),
             title: const Text('Kullanıcı Yönetimi'),

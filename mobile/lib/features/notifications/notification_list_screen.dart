@@ -1,11 +1,12 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
 import 'package:flamescope/core/auth/auth_service.dart';
-import 'package:flamescope/core/constants/app_constants.dart';
 import 'package:flamescope/core/constants/api_constants.dart';
+import 'package:flamescope/core/router/app_router.dart';
 import 'package:flamescope/data/api/notifications_api.dart';
 import 'package:flamescope/data/models/notification_model.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 class NotificationListScreen extends StatefulWidget {
   const NotificationListScreen({super.key});
@@ -37,7 +38,7 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
         _error = null;
       });
     } catch (e) {
-      if (mounted) setState(() => _error = 'Bildirimler yüklenemedi: $e');
+      if (mounted) setState(() => _error = 'Bildirimler yuklenemedi: $e');
     }
   }
 
@@ -59,9 +60,11 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
 
   Widget _buildBody() {
     if (_error != null) return Center(child: Text(_error!));
-    if (_notifications == null) return const Center(child: CircularProgressIndicator());
+    if (_notifications == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
     if (_notifications!.isEmpty) {
-      return const Center(child: Text('Hiç bildiriminiz yok.'));
+      return const Center(child: Text('Hic bildiriminiz yok.'));
     }
 
     return ListView.builder(
@@ -73,7 +76,9 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
           color: n.isRead ? null : Colors.red.shade50,
           child: ListTile(
             leading: Icon(
-              n.isRead ? Icons.notifications_none : Icons.notification_important,
+              n.isRead
+                  ? Icons.notifications_none
+                  : Icons.notification_important,
               color: n.isRead ? Colors.grey : Colors.red,
             ),
             title: Text(
@@ -82,8 +87,16 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
                 fontWeight: n.isRead ? FontWeight.normal : FontWeight.bold,
               ),
             ),
-            subtitle: Text('Bağlantı Kimliği: ${n.incidentId}'),
-            onTap: () => _markAsRead(n),
+            subtitle: n.incidentId != null
+                ? Text('Olay #${n.incidentId}')
+                : const Text('Sistem bildirimi'),
+            trailing:
+                n.incidentId != null ? const Icon(Icons.chevron_right) : null,
+            onTap: () async {
+              await _markAsRead(n);
+              if (!context.mounted || n.incidentId == null) return;
+              context.push(AppRouter.incidentDetailPath(n.incidentId!));
+            },
           ),
         );
       },

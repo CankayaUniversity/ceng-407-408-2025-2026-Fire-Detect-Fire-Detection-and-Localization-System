@@ -3,6 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:flamescope/core/auth/auth_service.dart';
 import 'package:flamescope/core/router/app_router.dart';
+import 'package:flamescope/core/notifications/notification_service.dart';
+import 'package:flamescope/features/home/widgets/dashboard_home_view.dart';
+import 'package:flamescope/features/home/widgets/dashboard_role_label.dart';
 
 class ManagerHomeScreen extends StatelessWidget {
   const ManagerHomeScreen({super.key});
@@ -10,40 +13,27 @@ class ManagerHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthService>().user;
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Yönetici'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await context.read<AuthService>().logout();
-              if (context.mounted) context.go(AppRouter.login);
-            },
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          if (user != null)
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.person),
-                title: Text(user.fullName),
-                subtitle: Text(user.email),
-              ),
-            ),
-          const SizedBox(height: 16),
-          ListTile(
-            leading: const Icon(Icons.warning_amber),
-            title: const Text('Olaylar (Incidents)'),
-            subtitle: const Text('Doğrula / Reddet'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(AppRouter.incidentList),
-          ),
-        ],
-      ),
+    if (user == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    return DashboardHomeView(
+      roleTitle: 'Operasyon Özeti',
+      userName: user.fullName,
+      roleLabel: dashboardRoleLabel(user.role),
+      actions: const [
+        DashboardActionItem(
+          title: 'Bildirim Geçmişi',
+          subtitle: 'Son uyarılar ve sistem bildirimleri',
+          icon: Icons.notifications_active_outlined,
+          route: AppRouter.notificationList,
+          centered: true,
+        ),
+      ],
+      onAlertTap: (context, event) {
+        context.push(AppRouter.incidentDetailPath(event.incidentId));
+        context.read<NotificationService>().markRead();
+      },
     );
   }
 }

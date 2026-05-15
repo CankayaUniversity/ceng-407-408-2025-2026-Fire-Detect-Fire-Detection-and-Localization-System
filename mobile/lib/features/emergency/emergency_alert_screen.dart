@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flamescope/core/api/api_client.dart';
 import 'package:flamescope/core/auth/auth_service.dart';
 import 'package:flamescope/core/constants/api_constants.dart';
+import 'package:flamescope/core/theme/app_theme.dart';
 import 'package:flamescope/shared/models/incident_model.dart';
 
 class EmergencyAlertScreen extends StatefulWidget {
@@ -72,7 +73,7 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.check_circle_outline, size: 64, color: Colors.green),
+                          Icon(Icons.check_circle_outline, size: 64, color: AppColors.safe),
                           SizedBox(height: 16),
                           Text('Aktif acil durum yok'),
                         ],
@@ -81,24 +82,53 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
                   : ListView(
                       padding: const EdgeInsets.all(16),
                       children: [
-                        const Card(
-                          color: Colors.amber,
-                          child: Padding(
-                            padding: EdgeInsets.all(16),
-                            child: Text(
-                              'Kaçış: En yakın acil çıkışı kullanın. Asansör kullanmayın.',
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF4A3310),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: AppColors.warning.withValues(alpha: 0.35),
                             ),
+                          ),
+                          child: Text(
+                              'Kaçış: En yakın acil çıkışı kullanın. Asansör kullanmayın.',
+                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                    color: const Color(0xFFFFE7B0),
+                                    fontWeight: FontWeight.w800,
+                                  ),
                           ),
                         ),
                         const SizedBox(height: 16),
                         ..._confirmed.map(
                           (inc) => Card(
-                            color: Colors.red.shade50,
+                            color: const Color(0xFF3A1412),
                             child: ListTile(
-                              leading: const Icon(Icons.warning_amber, color: Colors.red),
-                              title: Text(inc.cameraName ?? 'Kamera #${inc.cameraId}'),
-                              subtitle: Text('${inc.cameraLocation ?? '-'} • Doğrulanmış yangın'),
+                              leading: Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: AppColors.danger.withValues(alpha: 0.18),
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: const Icon(
+                                  Icons.warning_amber,
+                                  color: Color(0xFFFFB4AB),
+                                ),
+                              ),
+                              title: Text(
+                                inc.cameraName ?? 'Kamera #${inc.cameraId}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              subtitle: Text(
+                                '${inc.cameraLocation ?? '-'} • Doğrulanmış yangın',
+                                style: const TextStyle(
+                                  color: Color(0xFFFFDAD6),
+                                ),
+                              ),
                             ),
                           ),
                         ),

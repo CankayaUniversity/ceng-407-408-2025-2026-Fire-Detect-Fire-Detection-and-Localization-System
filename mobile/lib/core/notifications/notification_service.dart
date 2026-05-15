@@ -234,6 +234,9 @@ class NotificationService extends ChangeNotifier {
     _channel?.sink.close();
     _channel = null;
     _token = null;
+    _lastEvent = null;
+    _hasUnread = false;
+    notifyListeners();
   }
 
   @override

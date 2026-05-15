@@ -66,8 +66,10 @@ class _CameraListScreenState extends State<CameraListScreen> {
               Text('Kamera Ekle'),
             ],
           ),
-          content: SingleChildScrollView(
-            child: Column(
+          content: SizedBox(
+            width: 360,
+            child: SingleChildScrollView(
+              child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
@@ -100,36 +102,53 @@ class _CameraListScreenState extends State<CameraListScreen> {
                   ),
                 ),
                 const SizedBox(height: 6),
-                // Hızlı IP girişi
-              _IpShortcut(
-                onIpSelected: (ip) {
-                  rtspCtrl.text = 'rtsp://$ip:8555/webcam';
-                  setS(() {});
-                },
-              ),
+                Text(
+                  'IP adresi girersen RTSP alanı otomatik tamamlanır.',
+                  style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                _IpShortcut(
+                  onIpSelected: (ip) {
+                    rtspCtrl.text = 'rtsp://$ip:8555/webcam';
+                    setS(() {});
+                  },
+                ),
                 if (error != null) ...[
                   const SizedBox(height: 8),
                   Text(error!, style: const TextStyle(color: Colors.red, fontSize: 12)),
                 ],
               ],
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('İptal'),
             ),
-            FilledButton(
-              onPressed: () {
-                if (nameCtrl.text.trim().isEmpty ||
-                    locationCtrl.text.trim().isEmpty ||
-                    rtspCtrl.text.trim().isEmpty) {
-                  setS(() => error = 'Tüm alanları doldurun');
-                  return;
-                }
-                Navigator.pop(ctx, true);
-              },
-              child: const Text('Ekle'),
+          ),
+          actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+          actions: [
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: const Text('İptal'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () {
+                      if (nameCtrl.text.trim().isEmpty ||
+                          locationCtrl.text.trim().isEmpty ||
+                          rtspCtrl.text.trim().isEmpty) {
+                        setS(() => error = 'Tüm alanları doldurun');
+                        return;
+                      }
+                      Navigator.pop(ctx, true);
+                    },
+                    child: const Text('Ekle'),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -177,30 +196,58 @@ class _CameraListScreenState extends State<CameraListScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setS) => AlertDialog(
           title: Text('${cam.name} — RTSP Güncelle'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: rtspCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Yeni RTSP URL',
-                    hintText: 'rtsp://192.168.1.X:8555/webcam',
-                    prefixIcon: Icon(Icons.link),
-                    border: OutlineInputBorder(),
+          content: SizedBox(
+            width: 360,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: rtspCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Yeni RTSP URL',
+                      hintText: 'rtsp://192.168.1.X:8555/webcam',
+                      prefixIcon: Icon(Icons.link),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'IP adresi girersen RTSP alanı otomatik tamamlanır.',
+                    style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _IpShortcut(
+                    onIpSelected: (ip) {
+                      rtspCtrl.text = 'rtsp://$ip:8555/webcam';
+                      setS(() {});
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+          actions: [
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: const Text('İptal'),
                   ),
                 ),
-                const SizedBox(height: 8),
-                _IpShortcut(
-                  onIpSelected: (ip) {
-                    rtspCtrl.text = 'rtsp://$ip:8555/webcam';
-                    setS(() {});
-                  },
+                const SizedBox(width: 10),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: const Text('Kaydet'),
+                  ),
                 ),
-            ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('İptal')),
-            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Kaydet')),
+              ],
+            ),
           ],
         ),
       ),
@@ -358,30 +405,29 @@ class _IpShortcutState extends State<_IpShortcut> {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: TextField(
-            controller: _ctrl,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              labelText: 'Arkadaşın IP\'si',
-              hintText: '192.168.1.X',
-              isDense: true,
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.wifi, size: 18),
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        FilledButton.tonal(
-          onPressed: () {
-            final ip = _ctrl.text.trim();
-            if (ip.isNotEmpty) widget.onIpSelected(ip);
-          },
-          child: const Text('Uygula'),
-        ),
-      ],
+    return TextField(
+      controller: _ctrl,
+      keyboardType: TextInputType.number,
+      onChanged: (value) {
+        final ip = value.trim();
+        if (ip.isNotEmpty) {
+          widget.onIpSelected(ip);
+        }
+      },
+      decoration: const InputDecoration(
+        labelText: 'Arkadaşın IP\'si',
+        hintText: '192.168.1.X',
+        isDense: true,
+        border: OutlineInputBorder(),
+        prefixIcon: Icon(Icons.wifi, size: 18),
+        helperText: 'Örnek: 192.168.1.35',
+      ),
     );
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
   }
 }

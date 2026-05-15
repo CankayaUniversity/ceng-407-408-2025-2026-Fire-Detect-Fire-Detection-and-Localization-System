@@ -97,7 +97,7 @@ class AppTheme {
         ),
       ),
       appBarTheme: AppBarTheme(
-        centerTitle: true,
+        centerTitle: false,
         elevation: 0,
         scrolledUnderElevation: 0,
         backgroundColor: colorScheme.surface,

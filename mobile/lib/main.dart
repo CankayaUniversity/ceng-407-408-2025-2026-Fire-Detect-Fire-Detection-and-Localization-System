@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flamescope/core/auth/auth_service.dart';
@@ -129,6 +131,7 @@ class _FireAlertBanner extends StatefulWidget {
 class _FireAlertBannerState extends State<_FireAlertBanner>
     with SingleTickerProviderStateMixin {
   late final AnimationController _anim;
+  StreamSubscription<FireIncidentEvent>? _fireSub;
   FireIncidentEvent? _current;
 
   @override
@@ -138,7 +141,7 @@ class _FireAlertBannerState extends State<_FireAlertBanner>
       vsync: this,
       duration: const Duration(milliseconds: 400),
     );
-    NotificationService().onFireDetected.listen(_onFire);
+    _fireSub = NotificationService().onFireDetected.listen(_onFire);
   }
 
   void _onFire(FireIncidentEvent event) {
@@ -152,6 +155,7 @@ class _FireAlertBannerState extends State<_FireAlertBanner>
 
   @override
   void dispose() {
+    _fireSub?.cancel();
     _anim.dispose();
     super.dispose();
   }

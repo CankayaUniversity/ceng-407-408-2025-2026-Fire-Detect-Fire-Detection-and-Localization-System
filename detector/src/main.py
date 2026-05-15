@@ -162,10 +162,10 @@ def _detect_webcam_small_flame(entry: CameraEntry, frame) -> DetectionResult | N
     if height <= 0 or width <= 0:
         return None
 
-    y1 = int(height * 0.35)
-    y2 = int(height * 0.95)
-    x1 = int(width * 0.08)
-    x2 = int(width * 0.92)
+    y1 = int(height * 0.62)
+    y2 = int(height * 0.98)
+    x1 = int(width * 0.50)
+    x2 = int(width * 0.98)
     roi = frame[y1:y2, x1:x2]
     if roi.size == 0:
         return None
@@ -173,18 +173,18 @@ def _detect_webcam_small_flame(entry: CameraEntry, frame) -> DetectionResult | N
     hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
     orange_flame = cv2.inRange(
         hsv,
-        np.array([0, 95, 145], dtype=np.uint8),
+        np.array([0, 135, 170], dtype=np.uint8),
         np.array([42, 255, 255], dtype=np.uint8),
     )
     hot_yellow = cv2.inRange(
         hsv,
-        np.array([12, 45, 215], dtype=np.uint8),
+        np.array([12, 90, 225], dtype=np.uint8),
         np.array([48, 255, 255], dtype=np.uint8),
     )
     bright_flame_core = cv2.inRange(
         hsv,
-        np.array([8, 20, 235], dtype=np.uint8),
-        np.array([55, 220, 255], dtype=np.uint8),
+        np.array([8, 70, 240], dtype=np.uint8),
+        np.array([55, 255, 255], dtype=np.uint8),
     )
     mask = cv2.bitwise_or(orange_flame, hot_yellow)
 
@@ -211,13 +211,16 @@ def _detect_webcam_small_flame(entry: CameraEntry, frame) -> DetectionResult | N
             if blob_core.size else 0.0
         )
 
-    min_flame_ratio = 0.004
-    min_blob_ratio = 0.0018
-    has_bright_core = core_ratio >= 0.0006 or core_in_blob_ratio >= 0.018
+    blob_aspect = (bh / float(max(1, bw))) if largest_contour is not None else 0.0
+    min_flame_ratio = 0.003
+    min_blob_ratio = 0.0016
+    has_bright_core = core_ratio >= 0.0009 or core_in_blob_ratio >= 0.035
+    has_flame_shape = largest_contour is not None and bw <= width * 0.20 and bh <= height * 0.35 and blob_aspect >= 0.45
     has_fire = (
         flame_ratio >= min_flame_ratio
         and largest_blob_ratio >= min_blob_ratio
         and has_bright_core
+        and has_flame_shape
     )
     if not has_fire:
         return None

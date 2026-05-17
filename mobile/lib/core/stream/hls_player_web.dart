@@ -6,7 +6,7 @@ import 'package:flutter/widgets.dart';
 
 int _viewCounter = 0;
 
-/// RTSP URL'ini MediaMTX HLS URL'ine dönüştür.
+/// Converts the camera stream URL to a MediaMTX HLS URL.
 /// rtsp://IP:8554/stream  →  http://IP:8888/stream
 String rtspToHls(String rtspUrl) {
   try {

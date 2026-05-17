@@ -26,9 +26,11 @@ def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-_RETRY_DELAYS = [5, 10, 20, 30, 60]  # bağlantı hatasında bekleme süreleri (sn)
+_RETRY_DELAYS = [5, 10, 20, 30, 60]  # retry delays after connection errors (seconds)
 _LOBBY_DEMO_WINDOW_SECONDS = 14
 _LOBBY_DEMO_START_MS = 11000
+_OUTDOOR_DEMO_WINDOW_SECONDS = 8
+_OUTDOOR_DEMO_START_MS = 900
 
 
 def _is_lobby_demo_camera(entry: CameraEntry) -> bool:
@@ -40,8 +42,21 @@ def _is_webcam_demo_camera(entry: CameraEntry) -> bool:
     return "webcam" in name or "bilgisayar" in name
 
 
+def _is_outdoor_demo_camera(entry: CameraEntry) -> bool:
+    name = (entry.name or "").lower()
+    return "outdoor" in name or "duman" in name
+
+
 def _lobby_demo_marker_mtime() -> float | None:
     marker_path = Path(__file__).resolve().parents[2] / "demo-videos" / "lobby_fire.restart"
+    try:
+        return marker_path.stat().st_mtime
+    except OSError:
+        return None
+
+
+def _outdoor_demo_marker_mtime() -> float | None:
+    marker_path = Path(__file__).resolve().parents[2] / "demo-videos" / "outdoor_smoke.restart"
     try:
         return marker_path.stat().st_mtime
     except OSError:
@@ -54,6 +69,10 @@ def _frame_for_detection(entry: CameraEntry, frame):
 
 def _lobby_demo_video_path() -> Path:
     return Path(__file__).resolve().parents[2] / "demo-videos" / "lobby_fire.mp4"
+
+
+def _outdoor_demo_video_path() -> Path:
+    return Path(__file__).resolve().parents[2] / "demo-videos" / "outdoor_smoke.mp4"
 
 
 def _risk_score_from_fire_signal(
@@ -77,11 +96,11 @@ def _risk_score_from_fire_signal(
 
 def _detect_calibrated_early_flame(entry: CameraEntry, frame) -> DetectionResult | None:
     """
-    Sabit demo kamerasi icin erken alev kanali.
+    Early flame channel for the fixed demo camera.
 
-    YOLO modeli bu NIST salon videosundaki ilk 3-5 saniyelik alev formunu gec yakaliyor.
-    Kameraya ozel ROI ile lambayi/sag duvari disarida birakip, genis ve kalici alev rengi
-    alanini yakalayarak erken alarm uretiriz. Gercek kurulumda bu ROI kamera kalibrasyonudur.
+    The YOLO model catches the first 3-5 seconds of flame in this NIST room video late.
+    A camera-specific ROI excludes the lamp/right wall and captures a broad, persistent
+    flame-colored area to produce an early alarm. In production, this ROI is camera calibration.
     """
     if not _is_lobby_demo_camera(entry):
         return None
@@ -147,11 +166,11 @@ def _detect_calibrated_early_flame(entry: CameraEntry, frame) -> DetectionResult
 
 def _detect_webcam_small_flame(entry: CameraEntry, frame) -> DetectionResult | None:
     """
-    Webcam demo icin kucuk alev kanali.
+    Small-flame channel for the webcam demo.
 
-    YOLO tavan lambasini/parlamayi zaman zaman yangin sanabiliyor; bu nedenle webcam
-    demosunda ust bolgeyi disarida birakip yalniz alt/orta bolgede doygun alev rengi arariz.
-    Cakmak/kagit demosunda alevi kameranin alt-orta kismina getirmek en stabil sonuc verir.
+    YOLO can sometimes confuse ceiling lamps/glare with fire, so the webcam demo excludes
+    the upper area and searches for saturated flame color only in the lower/middle region.
+    For lighter/paper demos, placing the flame in the lower-middle camera area is most stable.
     """
     if not _is_webcam_demo_camera(entry):
         return None
@@ -320,6 +339,59 @@ def _send_lobby_demo_incident(
     return False
 
 
+def _send_outdoor_demo_incident(
+    entry: CameraEntry,
+    detector: BaseFireDetector,
+    notifier: BackendNotifier,
+    consecutive_required: int,
+) -> bool:
+    video_path = _outdoor_demo_video_path()
+    if not video_path.exists():
+        logger.warning("[%s] Outdoor demo video bulunamadi: %s", entry.name, video_path)
+        return False
+
+    cap = cv2.VideoCapture(str(video_path))
+    if not cap.isOpened():
+        logger.warning("[%s] Outdoor demo video acilamadi: %s", entry.name, video_path)
+        return False
+
+    fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+    frame_delay = 1.0 / max(1.0, min(fps, 30.0))
+    cap.set(cv2.CAP_PROP_POS_MSEC, _OUTDOOR_DEMO_START_MS)
+    max_frames = int(fps * _OUTDOOR_DEMO_WINDOW_SECONDS)
+    consecutive_fire_count = 0
+    outdoor_consecutive_required = 1
+
+    try:
+        for idx in range(max_frames):
+            ok, frame = cap.read()
+            if not ok or frame is None:
+                return False
+
+            result = detector.detect(frame)
+            if not result.has_fire:
+                consecutive_fire_count = 0
+                time.sleep(frame_delay)
+                continue
+
+            consecutive_fire_count += 1
+            if consecutive_fire_count < outdoor_consecutive_required:
+                continue
+
+            logger.info(
+                "[%s] OUTDOOR DEMO DUMAN TESPIT EDILDI! local_frame=%d confidence=%.2f",
+                entry.name,
+                idx,
+                result.confidence,
+            )
+            notifier.send_incident(entry.camera_id, frame, result.confidence)
+            return True
+    finally:
+        cap.release()
+
+    return False
+
+
 def camera_loop(
     entry: CameraEntry,
     cooldown_seconds: int,
@@ -328,13 +400,13 @@ def camera_loop(
     notifier: BackendNotifier,
 ) -> None:
     """
-    Bir kamera için sürekli çalışan döngü. Bağlantı kesilince otomatik yeniden bağlanır.
-    N ardışık fire frame → backend'e incident gönder → cooldown uygula.
+    Long-running loop for one camera. Reconnects automatically if the stream drops.
+    N consecutive fire frames -> send an incident to the backend -> apply cooldown.
     """
     effective_consecutive_required = consecutive_required
 
     logger.info(
-        "Kamera başlatıldı: %s  source=%s  consecutive=%d  cooldown=%ds",
+        "Camera started: %s  source=%s  consecutive=%d  cooldown=%ds",
         entry.name, entry.rtsp_url, effective_consecutive_required, cooldown_seconds,
     )
 
@@ -342,14 +414,24 @@ def camera_loop(
     last_incident_at: datetime | None = None
     clear_frames_required = max(5, consecutive_required)
     last_lobby_demo_marker = _lobby_demo_marker_mtime() or 0.0
+    last_outdoor_demo_marker = _outdoor_demo_marker_mtime() or 0.0
 
     if _is_lobby_demo_camera(entry):
-        logger.info("[%s] Lobby demo modu: RTSP beklemeden restart marker izleniyor.", entry.name)
+        logger.info("[%s] Lobby demo mode: watching restart marker without waiting for RTSP.", entry.name)
         while True:
             marker_mtime = _lobby_demo_marker_mtime()
             if marker_mtime and marker_mtime > last_lobby_demo_marker:
                 last_lobby_demo_marker = marker_mtime
                 _send_lobby_demo_incident(entry, notifier, consecutive_required)
+            time.sleep(0.2)
+
+    if _is_outdoor_demo_camera(entry):
+        logger.info("[%s] Outdoor demo mode: watching restart marker without waiting for RTSP.", entry.name)
+        while True:
+            marker_mtime = _outdoor_demo_marker_mtime()
+            if marker_mtime and marker_mtime > last_outdoor_demo_marker:
+                last_outdoor_demo_marker = marker_mtime
+                _send_outdoor_demo_incident(entry, detector, notifier, consecutive_required)
             time.sleep(0.2)
 
     while True:
@@ -363,15 +445,15 @@ def camera_loop(
         except RuntimeError as exc:
             delay = 0.5 if _is_lobby_demo_camera(entry) else _RETRY_DELAYS[min(retry_idx, len(_RETRY_DELAYS) - 1)]
             logger.warning(
-                "Kamera açılamadı [%s]: %s — %.1fs sonra tekrar denenecek",
+                "Camera could not be opened [%s]: %s; retrying in %.1fs",
                 entry.name, exc, delay,
             )
             retry_idx += 1
             time.sleep(delay)
             continue
 
-        retry_idx = 0  # başarılı bağlantıda sayacı sıfırla
-        logger.info("Kamera bağlandı: %s", entry.name)
+        retry_idx = 0
+        logger.info("Camera connected: %s", entry.name)
         connection_started_at = time.time()
         warmup_frames = 20 if _is_lobby_demo_camera(entry) else 0
 
@@ -394,14 +476,14 @@ def camera_loop(
                     consecutive_clear_count += 1
                     if not armed and consecutive_clear_count >= clear_frames_required:
                         armed = True
-                        logger.info("[%s] Detector tekrar hazir.", entry.name)
+                        logger.debug("[%s] Detector re-armed.", entry.name)
                     time.sleep(0.05)
                     continue
 
                 consecutive_clear_count = 0
                 consecutive_fire_count += 1
                 logger.debug(
-                    "[%s] Frame %d: fire (%.2f)  ardışık=%d/%d",
+                    "[%s] Frame %d: fire (%.2f)  consecutive=%d/%d",
                     entry.name, idx, result.confidence,
                     consecutive_fire_count, effective_consecutive_required,
                 )
@@ -421,7 +503,7 @@ def camera_loop(
                 )
                 if next_allowed_at and now < next_allowed_at:
                     remaining = (next_allowed_at - now).total_seconds()
-                    logger.debug("[%s] Cooldown: %.1fs kaldı.", entry.name, remaining)
+                    logger.debug("[%s] Cooldown: %.1fs remaining.", entry.name, remaining)
                     time.sleep(0.05)
                     continue
 
@@ -429,20 +511,20 @@ def camera_loop(
                 consecutive_fire_count = 0
                 armed = False
                 logger.info(
-                    "[%s] YANGIN TESPİT EDİLDİ! frame=%d  confidence=%.2f",
+                    "[%s] FIRE DETECTED! frame=%d  confidence=%.2f",
                     entry.name, idx, result.confidence,
                 )
                 snapshot_frame = _snapshot_frame_for_incident(entry, detection_frame, result)
                 notifier.send_incident(entry.camera_id, snapshot_frame, result.confidence)
 
         except Exception as exc:
-            logger.warning("[%s] Stream hatası: %s — yeniden bağlanılıyor", entry.name, exc)
+            logger.warning("[%s] Stream error: %s; reconnecting", entry.name, exc)
         finally:
             reader.release()
 
-        # Bağlantı koptu, kısa bekleyip yeniden bağlan
+        # Stream dropped; wait briefly and reconnect.
         delay = 0.5 if _is_lobby_demo_camera(entry) else _RETRY_DELAYS[min(retry_idx, len(_RETRY_DELAYS) - 1)]
-        logger.info("[%s] %.1fs sonra yeniden bağlanılıyor...", entry.name, delay)
+        logger.info("[%s] Reconnecting in %.1fs...", entry.name, delay)
         retry_idx = min(retry_idx + 1, len(_RETRY_DELAYS) - 1)
         time.sleep(delay)
 
@@ -458,7 +540,7 @@ def main() -> None:
             model_path=settings.cnn_model_path,
             threshold=settings.cnn_threshold,
         )
-        logger.info("CNN detector yüklendi. model=%s", settings.cnn_model_path or "(yok)")
+        logger.info("CNN detector loaded. model=%s", settings.cnn_model_path or "(none)")
     elif mode == "yolo":
         from .yolo_detector import YOLOFireDetector
         detector = YOLOFireDetector(
@@ -466,7 +548,7 @@ def main() -> None:
             confidence_threshold=settings.yolo_confidence_threshold,
             imgsz=settings.yolo_imgsz,
         )
-        logger.info("YOLO detector yüklendi. model=%s", settings.yolo_model_path or "(yok)")
+        logger.info("YOLO detector loaded. model=%s", settings.yolo_model_path or "(none)")
     else:
         detector = MockFireDetector(
             fire_threshold=settings.detection_fire_ratio_threshold,
@@ -492,7 +574,7 @@ def main() -> None:
             daemon=True,
         )
 
-    # ── Kamera yöneticisi ──────────────────────────────────────
+    # Camera manager
     manager = DynamicCameraManager(
         backend_url=settings.backend_base_url,
         api_key=settings.detector_api_key,
@@ -500,16 +582,16 @@ def main() -> None:
     )
 
     logger.info(
-        "Detector servisi başlatıldı. Backend: %s  Mod: %s",
+        "Detector service started. Backend: %s  Mode: %s",
         settings.backend_base_url, mode,
     )
-    logger.info("Backend'deki kameralar her %d saniyede otomatik yüklenir.", 30)
+    logger.info("Backend cameras are automatically reloaded every %d seconds.", 30)
 
     try:
-        # İlk sync hemen, sonra her 30 saniyede
+        # First sync runs immediately, then every 30 seconds.
         manager.run_loop()
     except KeyboardInterrupt:
-        logger.info("Durduruldu.")
+        logger.info("Stopped.")
 
 
 if __name__ == "__main__":

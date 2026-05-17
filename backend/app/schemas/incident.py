@@ -10,6 +10,20 @@ class IncidentCreateDetected(BaseModel):
     snapshot_url: str | None = None
 
 
+class IncidentSafetyReportResponse(BaseModel):
+    user_id: int
+    user_name: str
+    status: SafetyStatus
+    created_at: datetime
+
+
+class IncidentResponseUpdateResponse(BaseModel):
+    user_id: int
+    user_name: str
+    status: ResponseStatus
+    created_at: datetime
+
+
 class IncidentResponse(BaseModel):
     id: int
     camera_id: int
@@ -22,6 +36,8 @@ class IncidentResponse(BaseModel):
     detected_at: datetime
     confirmed_at: datetime | None = None
     confirmed_by: int | None = None
+    safety_reports: list[IncidentSafetyReportResponse] = []
+    response_updates: list[IncidentResponseUpdateResponse] = []
 
     class Config:
         from_attributes = True

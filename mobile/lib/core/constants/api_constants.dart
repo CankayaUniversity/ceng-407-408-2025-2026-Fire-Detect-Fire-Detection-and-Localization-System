@@ -14,7 +14,7 @@ const String kLanIp = String.fromEnvironment(
 /// - Android emülatör: 10.0.2.2:8000
 String get kBaseUrl => kIsWeb ? 'http://localhost:8000' : 'http://$kLanIp:8000';
 
-/// WebSocket URL (gerçek zamanlı yangın bildirimi)
+/// WebSocket URL for real-time fire notifications.
 String get kWsUrl => kIsWeb ? 'ws://localhost:8000/ws' : 'ws://$kLanIp:8000/ws';
 
 String? normalizeBackendAssetUrl(String? rawUrl) {
@@ -72,4 +72,6 @@ class ApiEndpoints {
       '/incidents/$id/response-update';
   static String restartLobbyDemo(int cameraId) =>
       '/cameras/$cameraId/demo/restart-lobby';
+  static String restartOutdoorDemo(int cameraId) =>
+      '/cameras/$cameraId/demo/restart-outdoor';
 }

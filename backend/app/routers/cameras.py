@@ -2,10 +2,15 @@ from pathlib import Path
 import subprocess
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.session import get_db
 from app.auth.dependencies import get_current_user, require_roles, verify_detector_api_key
+from app.models.camera import Camera
+from app.models.incident import Incident
+from app.models.incident_update import IncidentResponseUpdate, IncidentSafetyReport
+from app.models.notification import Notification
 from app.models.user import User, Role
 from app.schemas.camera import CameraCreate, CameraUpdate, CameraResponse, CameraListResponse
 from app.services.camera_service import CameraService
@@ -113,22 +118,41 @@ def _restart_lobby_demo_stream() -> dict[str, str]:
     return {"status": "restarted", "pid": str(process.pid)}
 
 
+def _restart_outdoor_demo_stream() -> dict[str, str]:
+    project_root = Path(__file__).resolve().parents[3]
+    video_path = project_root / "demo-videos" / "outdoor_smoke.mp4"
+    marker_path = project_root / "demo-videos" / "outdoor_smoke.restart"
+
+    if not video_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Outdoor demo video not found: {video_path}",
+        )
+
+    marker_path.write_text(
+        str(__import__("time").time()),
+        encoding="utf-8",
+    )
+
+    return {"status": "restarted"}
+
+
 @router.get("/detector-list")
 async def list_cameras_for_detector(
     db: AsyncSession = Depends(get_db),
     _ok: None = Depends(verify_detector_api_key),
 ):
     """
-    Detector servisinin kamera listesini çekmesi için endpoint.
-    JWT gerektirmez — detector API key ile (ya da key yoksa herkese açık).
-    Döner: [{"id": 1, "name": "...", "rtsp_url": "rtsp://..."}]
+    Endpoint used by the detector service to fetch cameras.
+    Does not require JWT; protected by detector API key when configured.
+    Returns: [{"id": 1, "name": "...", "rtsp_url": "rtsp://..."}]
     """
     cameras = await CameraService.list_cameras(db)
     return {
         "cameras": [
             {"id": c.id, "name": c.name, "location": c.location, "rtsp_url": c.rtsp_url}
             for c in cameras
-            if c.rtsp_url  # sadece RTSP URL'i olanları ver
+            if c.rtsp_url
         ]
     }
 
@@ -190,9 +214,27 @@ async def restart_lobby_demo_stream(
     if "lobby" not in (camera.name or "").lower():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Demo restart is only available for Lobby Kamera",
+            detail="Demo restart is only available for Lobby Camera",
         )
     return _restart_lobby_demo_stream()
+
+
+@router.post("/{camera_id}/demo/restart-outdoor")
+async def restart_outdoor_demo_stream(
+    camera_id: int,
+    current_user: User = Depends(require_roles(Role.ADMIN, Role.MANAGER)),
+    db: AsyncSession = Depends(get_db),
+):
+    camera = await CameraService.get_by_id(db, camera_id)
+    if not camera:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Camera not found")
+    camera_name = (camera.name or "").lower()
+    if "outdoor" not in camera_name and "duman" not in camera_name:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Demo restart is only available for Outdoor Smoke Camera",
+        )
+    return _restart_outdoor_demo_stream()
 
 
 @router.patch("/{camera_id}", response_model=CameraResponse)
@@ -238,3 +280,39 @@ async def create_camera(
         rtsp_url=camera.rtsp_url,
         created_at=camera.created_at,
     )
+
+
+@router.delete("/{camera_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_camera(
+    camera_id: int,
+    current_user: User = Depends(require_roles(Role.ADMIN)),
+    db: AsyncSession = Depends(get_db),
+):
+    camera = await CameraService.get_by_id(db, camera_id)
+    if not camera:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Camera not found")
+
+    incident_ids_result = await db.execute(
+        select(Incident.id).where(Incident.camera_id == camera_id)
+    )
+    incident_ids = list(incident_ids_result.scalars().all())
+
+    if incident_ids:
+        await db.execute(
+            delete(IncidentSafetyReport).where(
+                IncidentSafetyReport.incident_id.in_(incident_ids)
+            )
+        )
+        await db.execute(
+            delete(IncidentResponseUpdate).where(
+                IncidentResponseUpdate.incident_id.in_(incident_ids)
+            )
+        )
+        await db.execute(
+            delete(Notification).where(Notification.incident_id.in_(incident_ids))
+        )
+        await db.execute(delete(Incident).where(Incident.id.in_(incident_ids)))
+
+    await db.execute(delete(Camera).where(Camera.id == camera_id))
+    await db.commit()
+    return None

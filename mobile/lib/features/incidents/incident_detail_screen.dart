@@ -7,6 +7,7 @@ import 'package:flamescope/core/auth/auth_service.dart';
 import 'package:flamescope/core/constants/api_constants.dart';
 import 'package:flamescope/core/constants/app_constants.dart';
 import 'package:flamescope/core/router/app_router.dart';
+import 'package:flamescope/core/utils/display_formatters.dart';
 import 'package:flamescope/shared/models/incident_model.dart';
 
 class IncidentDetailScreen extends StatefulWidget {
@@ -46,8 +47,8 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
       if (mounted)
         setState(() {
           _error = e is DioException
-              ? (e.response?.statusMessage ?? 'Yüklenemedi')
-              : 'Hata';
+              ? (e.response?.statusMessage ?? 'Could not load')
+              : 'Error';
           _loading = false;
         });
     }
@@ -63,12 +64,12 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
       if (!mounted) return;
       await _load();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Olay başarıyla doğrulandı')),
+        const SnackBar(content: Text('Incident confirmed successfully')),
       );
     } catch (_) {
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Doğrulama gönderilemedi')));
+            const SnackBar(content: Text('Confirmation could not be sent')));
     }
   }
 
@@ -82,12 +83,12 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
       if (!mounted) return;
       await _load();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Olay yanlış alarm olarak işaretlendi')),
+        const SnackBar(content: Text('Incident marked as false alarm')),
       );
     } catch (_) {
       if (mounted)
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Red gönderilemedi')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Dismiss request could not be sent')));
     }
   }
 
@@ -99,19 +100,20 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
         data: {'status': status},
       );
       if (!mounted) return;
+      await _load();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             status == 'SAFE'
-                ? 'Guvenli durum bildirildi'
-                : 'Yardim ihtiyaci bildirildi',
+                ? 'Safety status reported'
+                : 'Need-help status reported',
           ),
         ),
       );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Durum bildirimi gonderilemedi')),
+        const SnackBar(content: Text('Status report could not be sent')),
       );
     }
   }
@@ -124,13 +126,14 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
         data: {'status': status},
       );
       if (!mounted) return;
+      await _load();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Mudahale durumu guncellendi')),
+        const SnackBar(content: Text('Response status updated')),
       );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Mudahale durumu gonderilemedi')),
+        const SnackBar(content: Text('Response status could not be sent')),
       );
     }
   }
@@ -145,7 +148,7 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Olay Detayı'),
+        title: const Text('Incident Detail'),
         leading: IconButton(
             icon: const Icon(Icons.arrow_back), onPressed: () => context.pop()),
       ),
@@ -154,7 +157,7 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
           : _error != null
               ? Center(child: Text(_error!))
               : _incident == null
-                  ? const Center(child: Text('Bulunamadı'))
+                  ? const Center(child: Text('Not found'))
                   : SingleChildScrollView(
                       padding: const EdgeInsets.all(16),
                       child: Column(
@@ -166,8 +169,9 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
 
                           const SizedBox(height: 12),
 
-                          // ── Olay bilgileri ─────────────────────────────────
+                          // ── Incident information ─────────────────────────────────
                           Card(
+                            color: const Color(0xFFFFF3E0),
                             child: Padding(
                               padding: const EdgeInsets.all(16),
                               child: Column(
@@ -175,44 +179,51 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
                                 children: [
                                   Text(
                                     _incident!.cameraName ??
-                                        'Kamera #${_incident!.cameraId}',
-                                    style:
-                                        Theme.of(context).textTheme.titleLarge,
+                                        'Camera #${_incident!.cameraId}',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w800,
+                                        ),
                                   ),
                                   const SizedBox(height: 8),
                                   if (_incident!.cameraLocation != null)
                                     _InfoRow(Icons.location_on,
                                         _incident!.cameraLocation!),
-                                  _InfoRow(
-                                    Icons.circle,
-                                    _incident!.status,
-                                    iconColor: _incident!.isConfirmed
-                                        ? Colors.green
-                                        : _incident!.isDetected
-                                            ? Colors.orange
-                                            : Colors.grey,
-                                  ),
+                                  StatusBadge(status: _incident!.status),
                                   if (_incident!.confidence != null)
                                     _InfoRow(
                                       Icons.percent,
-                                      'Risk Skoru: ${(_incident!.confidence! * 100).toStringAsFixed(0)}%',
+                                      'Risk Score: ${(_incident!.confidence! * 100).toStringAsFixed(0)}%',
                                     ),
                                   const SizedBox(height: 8),
                                   _RiskLevelChip(incident: _incident!),
                                   if (_incident!.detectedAt != null)
-                                    _InfoRow(Icons.access_time,
-                                        _formatDate(_incident!.detectedAt!)),
+                                    _InfoRow(
+                                      Icons.access_time,
+                                      formatIncidentDate(
+                                        _incident!.detectedAt!,
+                                      ),
+                                    ),
                                 ],
                               ),
                             ),
                           ),
 
-                          // ── Onayla / Reddet ────────────────────────────────
+                          // ── Confirm / Dismiss ────────────────────────────────
                           const SizedBox(height: 12),
                           _IncidentTimeline(
                             incident: _incident!,
-                            formatDate: _formatDate,
+                            formatDate: formatIncidentDate,
                           ),
+
+                          if (canConfirmDismiss &&
+                              (_incident!.safetyReports.isNotEmpty ||
+                                  _incident!.responseUpdates.isNotEmpty)) ...[
+                            const SizedBox(height: 12),
+                            _OperationsFeedbackPanel(incident: _incident!),
+                          ],
 
                           if (canConfirmDismiss && _incident!.isDetected) ...[
                             const SizedBox(height: 16),
@@ -221,11 +232,12 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
                                 Expanded(
                                   child: FilledButton.icon(
                                     style: FilledButton.styleFrom(
-                                        backgroundColor: Colors.red),
+                                        backgroundColor:
+                                            const Color(0xFFD84315)),
                                     onPressed: _confirm,
                                     icon:
                                         const Icon(Icons.local_fire_department),
-                                    label: const Text('Yangın — Onayla'),
+                                    label: const Text('Confirm Alarm'),
                                   ),
                                 ),
                                 const SizedBox(width: 12),
@@ -233,14 +245,14 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
                                   child: OutlinedButton.icon(
                                     onPressed: _dismiss,
                                     icon: const Icon(Icons.close),
-                                    label: const Text('Yanlış Alarm'),
+                                    label: const Text('False Alarm'),
                                   ),
                                 ),
                               ],
                             ),
                           ],
 
-                          // ── Canlı yayın ────────────────────────────────────
+                          // ── Live stream ────────────────────────────────────
                           if (isEmployee && _incident!.isConfirmed) ...[
                             const SizedBox(height: 16),
                             _EmployeeSafetyActions(
@@ -271,7 +283,7 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
                                       cameraId: _incident!.cameraId,
                                       incidentId: _incident!.id)),
                               icon: const Icon(Icons.videocam),
-                              label: const Text('Canlı Yayına Geç'),
+                              label: const Text('Open Live View'),
                             ),
                           ],
                         ],
@@ -279,13 +291,9 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
                     ),
     );
   }
-
-  String _formatDate(DateTime d) {
-    return '${d.day}.${d.month}.${d.year} ${d.hour}:${d.minute.toString().padLeft(2, '0')}';
-  }
 }
 
-// ── Yardımcı widget'lar ──────────────────────────────────────────────────────
+// ── Helper widgets ───────────────────────────────────────────────────────────
 
 class _RiskLevelChip extends StatelessWidget {
   const _RiskLevelChip({required this.incident});
@@ -327,29 +335,41 @@ class _IncidentTimeline extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = <_TimelineItem>[
       _TimelineItem(
-        title: 'Tespit edildi',
+        title: 'Detected',
         subtitle: incident.detectedAt == null
-            ? 'Kamera goruntusunden riskli olay uretildi'
+            ? 'A risky event was generated from camera footage'
             : formatDate(incident.detectedAt!),
         icon: Icons.sensors,
         color: Colors.orange,
         completed: true,
       ),
       _TimelineItem(
-        title: incident.isConfirmed
-            ? 'Karar verildi'
-            : 'Yonetici onayi bekleniyor',
-        subtitle: incident.isConfirmed
-            ? 'Alarm CONFIRMED durumuna alindi'
-            : 'Admin/manager olayi onaylayabilir veya yanlis alarm isaretleyebilir',
-        icon: incident.isConfirmed ? Icons.verified : Icons.hourglass_bottom,
-        color: incident.isConfirmed ? Colors.green : Colors.orange,
-        completed: incident.isConfirmed,
+        title: incident.isDismissed
+            ? 'Marked as false alarm'
+            : incident.isConfirmed
+                ? 'Decision made'
+                : 'Waiting for manager approval',
+        subtitle: incident.isDismissed
+            ? 'Alarm was moved to DISMISSED status'
+            : incident.isConfirmed
+                ? 'Alarm was moved to CONFIRMED status'
+                : 'Admin/manager can confirm the incident or mark it as false alarm',
+        icon: incident.isDismissed
+            ? Icons.cancel_outlined
+            : incident.isConfirmed
+                ? Icons.verified
+                : Icons.hourglass_bottom,
+        color: incident.isDismissed
+            ? Colors.grey
+            : incident.isConfirmed
+                ? Colors.green
+                : Colors.orange,
+        completed: incident.isConfirmed || incident.isDismissed,
       ),
       _TimelineItem(
-        title: 'Calisanlara bildirildi',
+        title: 'Team notified',
         subtitle: incident.confirmedAt == null
-            ? 'Onay sonrasi employee ve fire response unit bilgilendirilir'
+            ? 'Employee and fire response unit are notified after confirmation'
             : formatDate(incident.confirmedAt!),
         icon: Icons.campaign,
         color: Colors.red,
@@ -364,8 +384,10 @@ class _IncidentTimeline extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Olay Zaman Cizelgesi',
-              style: Theme.of(context).textTheme.titleMedium,
+              'Incident Timeline',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
             ),
             const SizedBox(height: 12),
             for (var i = 0; i < items.length; i++)
@@ -451,6 +473,112 @@ class _TimelineRow extends StatelessWidget {
   }
 }
 
+class _OperationsFeedbackPanel extends StatelessWidget {
+  const _OperationsFeedbackPanel({required this.incident});
+
+  final IncidentModel incident;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Field Feedback',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+            ),
+            if (incident.safetyReports.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(
+                'Employee Safety',
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+              const SizedBox(height: 8),
+              for (final report in incident.safetyReports)
+                _FeedbackRow(
+                  icon: report.needsHelp ? Icons.sos : Icons.check_circle,
+                  iconColor: report.needsHelp ? Colors.red : Colors.green,
+                  title: report.userName,
+                  status: report.label,
+                  time: report.createdAt,
+                ),
+            ],
+            if (incident.responseUpdates.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(
+                'Fire Response Unit',
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+              const SizedBox(height: 8),
+              for (final update in incident.responseUpdates)
+                _FeedbackRow(
+                  icon: Icons.local_fire_department,
+                  iconColor: Colors.deepOrange,
+                  title: update.userName,
+                  status: update.label,
+                  time: update.createdAt,
+                ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FeedbackRow extends StatelessWidget {
+  const _FeedbackRow({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.status,
+    required this.time,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String status;
+  final DateTime? time;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 15,
+            backgroundColor: iconColor.withValues(alpha: 0.12),
+            child: Icon(icon, size: 16, color: iconColor),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
+                Text(
+                  time == null
+                      ? status
+                      : '$status • ${formatIncidentDate(time!)}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _EmployeeSafetyActions extends StatelessWidget {
   const _EmployeeSafetyActions({
     required this.onSafe,
@@ -469,20 +597,22 @@ class _EmployeeSafetyActions extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Tahliye Durumu',
-              style: Theme.of(context).textTheme.titleMedium,
+              'Evacuation Status',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
             ),
             const SizedBox(height: 12),
             FilledButton.icon(
               onPressed: onSafe,
               icon: const Icon(Icons.check_circle),
-              label: const Text('Guvendeyim'),
+              label: const Text('I am safe'),
             ),
             const SizedBox(height: 8),
             OutlinedButton.icon(
               onPressed: onNeedHelp,
               icon: const Icon(Icons.sos),
-              label: const Text('Yardima ihtiyacim var'),
+              label: const Text('I need help'),
             ),
           ],
         ),
@@ -511,26 +641,28 @@ class _FireResponseActions extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Mudahale Durumu',
-              style: Theme.of(context).textTheme.titleMedium,
+              'Response Status',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
             ),
             const SizedBox(height: 12),
             FilledButton.icon(
               onPressed: onDispatched,
               icon: const Icon(Icons.local_fire_department),
-              label: const Text('Yola cikildi'),
+              label: const Text('Dispatched'),
             ),
             const SizedBox(height: 8),
             OutlinedButton.icon(
               onPressed: onArrived,
               icon: const Icon(Icons.location_on),
-              label: const Text('Olay yerine ulasildi'),
+              label: const Text('Arrived on scene'),
             ),
             const SizedBox(height: 8),
             OutlinedButton.icon(
               onPressed: onUnderControl,
               icon: const Icon(Icons.health_and_safety),
-              label: const Text('Kontrol altina alindi'),
+              label: const Text('Under control'),
             ),
           ],
         ),
@@ -540,10 +672,9 @@ class _FireResponseActions extends StatelessWidget {
 }
 
 class _InfoRow extends StatelessWidget {
-  const _InfoRow(this.icon, this.text, {this.iconColor});
+  const _InfoRow(this.icon, this.text);
   final IconData icon;
   final String text;
-  final Color? iconColor;
 
   @override
   Widget build(BuildContext context) {
@@ -551,9 +682,7 @@ class _InfoRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         children: [
-          Icon(icon,
-              size: 16,
-              color: iconColor ?? Theme.of(context).colorScheme.primary),
+          Icon(icon, size: 16, color: Theme.of(context).colorScheme.primary),
           const SizedBox(width: 6),
           Expanded(child: Text(text)),
         ],
@@ -569,7 +698,7 @@ class _SnapshotImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(8),
       child: AspectRatio(
         aspectRatio: 16 / 9,
         child: Image.network(
@@ -588,7 +717,7 @@ class _SnapshotImage extends StatelessWidget {
               children: [
                 Icon(Icons.broken_image, size: 48, color: Colors.grey),
                 SizedBox(height: 8),
-                Text('Görüntü yüklenemedi',
+                Text('Image could not be loaded',
                     style: TextStyle(color: Colors.grey)),
               ],
             ),

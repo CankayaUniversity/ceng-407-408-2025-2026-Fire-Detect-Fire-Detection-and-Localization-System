@@ -25,6 +25,7 @@ class LiveStreamScreen extends StatefulWidget {
 
 class _LiveStreamScreenState extends State<LiveStreamScreen> {
   static const Duration _lobbyDemoStartAt = Duration(seconds: 9);
+  static const Duration _outdoorDemoStartAt = Duration.zero;
 
   CameraModel? _camera;
   bool _loading = true;
@@ -75,6 +76,11 @@ class _LiveStreamScreenState extends State<LiveStreamScreen> {
     return name.contains('lobby');
   }
 
+  bool get _isOutdoorDemoCamera {
+    final name = (_camera?.name ?? '').toLowerCase();
+    return name.contains('outdoor') || name.contains('duman');
+  }
+
   Future<void> _restartLobbyDemoStream() async {
     final auth = context.read<AuthService>();
     try {
@@ -82,6 +88,16 @@ class _LiveStreamScreenState extends State<LiveStreamScreen> {
           .post(ApiEndpoints.restartLobbyDemo(widget.cameraId));
     } catch (_) {
       // Demo restart is best-effort; the local YouTube preview can still play.
+    }
+  }
+
+  Future<void> _restartOutdoorDemoStream() async {
+    final auth = context.read<AuthService>();
+    try {
+      await createDio(auth)
+          .post(ApiEndpoints.restartOutdoorDemo(widget.cameraId));
+    } catch (_) {
+      // Demo restart is best-effort; the local video preview can still play.
     }
   }
 
@@ -93,7 +109,7 @@ class _LiveStreamScreenState extends State<LiveStreamScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final title = _camera?.name ?? 'Kamera #${widget.cameraId}';
+    final title = _camera?.name ?? 'Camera #${widget.cameraId}';
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -109,7 +125,7 @@ class _LiveStreamScreenState extends State<LiveStreamScreen> {
           if (_rtspUrl != null)
             IconButton(
               icon: const Icon(Icons.refresh),
-              tooltip: 'Yenile',
+              tooltip: 'Refresh',
               onPressed: _fetchCamera,
             ),
         ],
@@ -127,15 +143,25 @@ class _LiveStreamScreenState extends State<LiveStreamScreen> {
                       location: _camera?.location ?? '',
                       onRestartStream: _restartLobbyDemoStream,
                       startAt: _lobbyDemoStartAt,
+                      videoFileName: 'lobby_fire.mp4',
                     )
-                  : _rtspUrl == null || _rtspUrl!.isEmpty
-                      ? const _NoStreamView()
-                      : _StreamView(
-                          rtspUrl: _rtspUrl!,
-                          hlsUrl: _hlsUrl,
+                  : _isOutdoorDemoCamera
+                      ? _LobbyDemoVideoView(
+                          key: ValueKey('outdoor-demo-${widget.cameraId}'),
                           cameraName: _camera?.name ?? '',
                           location: _camera?.location ?? '',
-                        ),
+                          onRestartStream: _restartOutdoorDemoStream,
+                          startAt: _outdoorDemoStartAt,
+                          videoFileName: 'outdoor_smoke.mp4',
+                        )
+                      : _rtspUrl == null || _rtspUrl!.isEmpty
+                          ? const _NoStreamView()
+                          : _StreamView(
+                              rtspUrl: _rtspUrl!,
+                              hlsUrl: _hlsUrl,
+                              cameraName: _camera?.name ?? '',
+                              location: _camera?.location ?? '',
+                            ),
     );
   }
 }
@@ -149,12 +175,14 @@ class _LobbyDemoVideoView extends StatefulWidget {
     required this.location,
     required this.onRestartStream,
     required this.startAt,
+    required this.videoFileName,
   });
 
   final String cameraName;
   final String location;
   final Future<void> Function() onRestartStream;
   final Duration startAt;
+  final String videoFileName;
 
   @override
   State<_LobbyDemoVideoView> createState() => _LobbyDemoVideoViewState();
@@ -170,7 +198,7 @@ class _LobbyDemoVideoViewState extends State<_LobbyDemoVideoView> {
   void initState() {
     super.initState();
     _controller = VideoPlayerController.networkUrl(
-      Uri.parse('$kBaseUrl/demo-videos/lobby_fire.mp4'),
+      Uri.parse('$kBaseUrl/demo-videos/${widget.videoFileName}'),
     );
     _initializeVideo();
   }
@@ -278,7 +306,7 @@ class _LobbyDemoVideoViewState extends State<_LobbyDemoVideoView> {
                 _restartDemo();
               },
               icon: const Icon(Icons.replay),
-              label: const Text('Baştan Oynat'),
+              label: const Text('Replay from Start'),
             ),
           ),
         ),
@@ -306,7 +334,7 @@ class _LobbyDemoVideoViewState extends State<_LobbyDemoVideoView> {
                 ),
               ),
               IconButton(
-                tooltip: 'Bastan oynat',
+                tooltip: 'Replay from start',
                 icon: const Icon(Icons.replay, color: Colors.white54, size: 20),
                 onPressed: () {
                   _restartDemo();
@@ -349,7 +377,7 @@ class _StreamView extends StatelessWidget {
               const Icon(Icons.circle, color: Colors.red, size: 10),
               const SizedBox(width: 6),
               const Text(
-                'CANLI',
+                'LIVE',
                 style: TextStyle(
                   color: Colors.red,
                   fontWeight: FontWeight.bold,
@@ -364,21 +392,21 @@ class _StreamView extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              // HLS URL kopyala butonu
+              // HLS URL info button
               GestureDetector(
                 onTap: () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('HLS: $hlsUrl'),
                       action: SnackBarAction(
-                        label: 'Tamam',
+                        label: 'OK',
                         onPressed: () {},
                       ),
                     ),
                   );
                 },
                 child: const Tooltip(
-                  message: 'HLS URL\'yi göster',
+                  message: 'Show HLS URL',
                   child:
                       Icon(Icons.info_outline, color: Colors.white38, size: 18),
                 ),
@@ -403,7 +431,7 @@ class _NoStreamView extends StatelessWidget {
           Icon(Icons.videocam_off, color: Colors.white38, size: 64),
           SizedBox(height: 16),
           Text(
-            'Bu kamera için RTSP URL tanımlı değil.\nKameralar ekranından URL ekleyin.',
+            'No stream source is defined for this camera.\nAdd one from the Cameras screen.',
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.white54),
           ),
@@ -430,7 +458,7 @@ class _ErrorView extends StatelessWidget {
               style: const TextStyle(color: Colors.white70),
               textAlign: TextAlign.center),
           const SizedBox(height: 16),
-          FilledButton(onPressed: onRetry, child: const Text('Tekrar Dene')),
+          FilledButton(onPressed: onRetry, child: const Text('Retry')),
         ],
       ),
     );

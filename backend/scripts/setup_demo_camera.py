@@ -28,8 +28,8 @@ async def main() -> None:
     parser.add_argument("--host", help="Computer LAN IP, e.g. 192.168.1.35")
     parser.add_argument("--port", type=int, default=8555, help="RTSP port, default: 8555")
     parser.add_argument("--rtsp-url", help="Full RTSP URL. Overrides --host/--port.")
-    parser.add_argument("--name", default="Bilgisayar Webcam")
-    parser.add_argument("--location", default="Bu Bilgisayar")
+    parser.add_argument("--name", default="Computer Webcam")
+    parser.add_argument("--location", default="This Computer")
     args = parser.parse_args()
 
     if not args.rtsp_url and not args.host:

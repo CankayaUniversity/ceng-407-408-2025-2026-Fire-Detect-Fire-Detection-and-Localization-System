@@ -2,6 +2,7 @@ import 'package:flamescope/core/api/api_client.dart';
 import 'package:flamescope/core/auth/auth_service.dart';
 import 'package:flamescope/core/constants/api_constants.dart';
 import 'package:flamescope/core/router/app_router.dart';
+import 'package:flamescope/features/home/widgets/home_header_card.dart';
 import 'package:flamescope/shared/models/incident_model.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -44,10 +45,9 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.watch<AuthService>().user;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Calisan'),
+        title: const Text('Safety Center'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -63,23 +63,22 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            if (user != null)
-              Card(
-                child: ListTile(
-                  leading: const Icon(Icons.person),
-                  title: Text(user.fullName),
-                  subtitle: Text(user.email),
-                ),
-              ),
+            const HomeHeaderCard(
+              title: 'Employee Safety',
+              subtitle: 'Receive confirmed alarms and report your status',
+              icon: Icons.health_and_safety_outlined,
+              accent: Color(0xFFEF6C00),
+            ),
             const SizedBox(height: 16),
             _ActiveEmergencyPanel(active: _active, loading: _loading),
             const SizedBox(height: 16),
             const _SafetyInstructionsCard(),
             const SizedBox(height: 16),
-            ListTile(
-              leading: const Icon(Icons.notifications_active),
-              title: const Text('Acil Durum Bildirimleri'),
-              trailing: const Icon(Icons.chevron_right),
+            HomeActionTile(
+              icon: Icons.notifications_active_outlined,
+              title: 'Emergency Notifications',
+              subtitle: 'Open received alerts and incident messages',
+              color: const Color(0xFFD84315),
               onTap: () => context.push(AppRouter.notificationList),
             ),
           ],
@@ -112,31 +111,36 @@ class _ActiveEmergencyPanel extends StatelessWidget {
     if (active.isEmpty) {
       return const Card(
         child: ListTile(
-          leading: Icon(Icons.check_circle_outline, color: Colors.green),
-          title: Text('Aktif acil durum yok'),
-          subtitle: Text('Yeni bir onayli alarm geldiginde burada gorunur.'),
+          leading: Icon(Icons.check_circle_outline, color: Color(0xFF2E7D32)),
+          title: Text('No active emergency'),
+          subtitle: Text('Confirmed alarms will appear here.'),
         ),
       );
     }
 
     return Card(
-      color: Colors.red.shade50,
+      color: const Color(0xFFFFEBEE),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Aktif Acil Durumlar',
-              style: Theme.of(context).textTheme.titleMedium,
+              'Active Emergencies',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
             ),
             const SizedBox(height: 8),
             for (final incident in active.take(3))
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.warning_amber, color: Colors.red),
+                leading: const Icon(
+                  Icons.local_fire_department,
+                  color: Color(0xFFC62828),
+                ),
                 title:
-                    Text(incident.cameraName ?? 'Kamera #${incident.cameraId}'),
+                    Text(incident.cameraName ?? 'Camera #${incident.cameraId}'),
                 subtitle: Text(
                   '${incident.cameraLocation ?? '-'} - ${incident.riskLevelLabel}',
                 ),
@@ -157,10 +161,10 @@ class _SafetyInstructionsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const items = [
-      'Asansor kullanma.',
-      'Duman varsa yere yakin ilerle.',
-      'En yakin guvenli cikis yonlendirmesini takip et.',
-      'Guvendeysen olay detayindan durumunu bildir.',
+      'Do not use elevators.',
+      'Stay low if there is smoke.',
+      'Follow the nearest safe exit route.',
+      'If you are safe, report your status from the incident detail.',
     ];
 
     return Card(
@@ -170,8 +174,10 @@ class _SafetyInstructionsCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Tahliye Talimatlari',
-              style: Theme.of(context).textTheme.titleMedium,
+              'Evacuation Instructions',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
             ),
             const SizedBox(height: 8),
             for (final item in items)
@@ -180,7 +186,11 @@ class _SafetyInstructionsCard extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.check, size: 16, color: Colors.green),
+                    const Icon(
+                      Icons.check_circle,
+                      size: 16,
+                      color: Color(0xFF2E7D32),
+                    ),
                     const SizedBox(width: 8),
                     Expanded(child: Text(item)),
                   ],

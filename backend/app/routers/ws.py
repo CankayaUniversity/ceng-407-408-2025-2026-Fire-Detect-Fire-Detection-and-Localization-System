@@ -1,14 +1,15 @@
 """
-WebSocket endpoint — gerçek zamanlı yangın bildirimleri.
+WebSocket endpoint for real-time fire notifications.
 
-Bağlantı: ws://<host>/ws?token=<JWT>
-Client bağlandıktan sonra yangın olayı oluşunca sunucu JSON push eder.
+Connection: ws://<host>/ws?token=<JWT>
+After the client connects, the server pushes JSON messages when a fire incident is created.
 """
+
 from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query, Depends
+from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -29,8 +30,8 @@ async def websocket_incidents(
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """
-    Gerçek zamanlı yangın bildirimi endpoint'i.
-    Yangın tespit edildiğinde tüm bağlı client'lara push gönderilir.
+    Real-time fire notification endpoint.
+    Pushes incident updates to connected clients when fire is detected.
     """
     payload = decode_token(token)
     if not payload:
@@ -47,7 +48,7 @@ async def websocket_incidents(
     await manager.connect(websocket, user.id, user.role)
     try:
         while True:
-            # Ping/pong için client mesajlarını oku (bağlantıyı canlı tutar)
+            # Read client messages for ping/pong and keep the connection alive.
             await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket)

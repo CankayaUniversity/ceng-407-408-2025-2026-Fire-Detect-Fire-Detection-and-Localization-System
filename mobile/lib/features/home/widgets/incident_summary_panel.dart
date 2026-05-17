@@ -43,42 +43,66 @@ class _IncidentSummaryPanelState extends State<IncidentSummaryPanel> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Alarm Ozeti',
-              style: Theme.of(context).textTheme.titleMedium,
+            Row(
+              children: [
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFE0B2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.analytics_outlined,
+                    color: Color(0xFFE65100),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'Alarm Summary',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               crossAxisCount: 2,
-              childAspectRatio: 2.5,
-              mainAxisSpacing: 8,
-              crossAxisSpacing: 8,
+              childAspectRatio: 2.35,
+              mainAxisSpacing: 10,
+              crossAxisSpacing: 10,
               children: [
                 _MetricTile(
                   icon: Icons.warning_amber,
-                  label: 'Toplam',
+                  label: 'Total',
                   value: '${data['total'] ?? 0}',
-                  color: Colors.deepOrange,
+                  color: const Color(0xFFE65100),
+                  background: const Color(0xFFFFF3E0),
                 ),
                 _MetricTile(
                   icon: Icons.verified,
-                  label: 'Onaylanan',
+                  label: 'Confirmed',
                   value: '${data['confirmed'] ?? 0}',
-                  color: Colors.green,
+                  color: const Color(0xFF2E7D32),
+                  background: const Color(0xFFE8F5E9),
                 ),
                 _MetricTile(
                   icon: Icons.close,
-                  label: 'Yanlis Alarm',
+                  label: 'False Alarm',
                   value: '${data['dismissed'] ?? 0}',
-                  color: Colors.brown,
+                  color: const Color(0xFF6D4C41),
+                  background: const Color(0xFFFFF8E1),
                 ),
                 _MetricTile(
                   icon: Icons.percent,
-                  label: 'Ort. Risk',
+                  label: 'Avg. Risk',
                   value: avgRisk == null ? '-' : '%${(avgRisk * 100).round()}',
-                  color: Colors.indigo,
+                  color: const Color(0xFFC62828),
+                  background: const Color(0xFFFFEBEE),
                 ),
               ],
             ),
@@ -95,21 +119,32 @@ class _MetricTile extends StatelessWidget {
     required this.label,
     required this.value,
     required this.color,
+    required this.background,
   });
 
   final IconData icon;
   final String label;
   final String value;
   final Color color;
+  final Color background;
 
   @override
   Widget build(BuildContext context) {
     return Card(
+      color: background,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
         child: Row(
           children: [
-            Icon(icon, color: color, size: 22),
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.72),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -118,7 +153,10 @@ class _MetricTile extends StatelessWidget {
                 children: [
                   Text(
                     value,
-                    style: Theme.of(context).textTheme.titleMedium,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFF30221B),
+                        ),
                   ),
                   Text(
                     label,

@@ -32,7 +32,7 @@ void main() async {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       if (message.notification != null) {
         NotificationService().showPushNotification(
-          message.notification!.title ?? 'Bildirim',
+          message.notification!.title ?? 'Notification',
           message.notification!.body ?? '',
         );
       }
@@ -41,7 +41,7 @@ void main() async {
     debugPrint("Firebase init failed: $e");
   }
 
-  // Bildirimleri başlat
+  // Initialize notifications.
   await NotificationService().init();
 
   final authService = AuthService()..loadToken();
@@ -79,7 +79,7 @@ class _AppWithFireAlertState extends State<_AppWithFireAlert> {
   @override
   void initState() {
     super.initState();
-    // Auth değişimini dinle → login olunca WS bağlan
+    // Listen for auth changes and connect the WebSocket after login.
     widget.authService.addListener(_onAuthChanged);
   }
 
@@ -106,7 +106,7 @@ class _AppWithFireAlertState extends State<_AppWithFireAlert> {
       theme: AppTheme.light,
       routerConfig: AppRouter.createRouter(widget.authService),
       builder: (context, child) {
-        // Tüm sayfaların üstüne yangın uyarı banner'ı yerleştir
+        // Place the fire alert banner above all pages.
         return Stack(
           children: [
             child ?? const SizedBox.shrink(),
@@ -118,7 +118,7 @@ class _AppWithFireAlertState extends State<_AppWithFireAlert> {
   }
 }
 
-/// Yangın tespit edildiğinde ekranın üstünde görünen kırmızı banner.
+/// Red banner shown at the top when a fire is detected.
 class _FireAlertBanner extends StatefulWidget {
   const _FireAlertBanner();
 
@@ -144,7 +144,7 @@ class _FireAlertBannerState extends State<_FireAlertBanner>
   void _onFire(FireIncidentEvent event) {
     setState(() => _current = event);
     _anim.forward(from: 0);
-    // 8 saniye sonra otomatik kapat
+    // Automatically close after 8 seconds.
     Future.delayed(const Duration(seconds: 8), () {
       if (mounted) _anim.reverse();
     });
@@ -202,7 +202,7 @@ class _FireAlertBannerState extends State<_FireAlertBanner>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'YANGIN TESPİT EDİLDİ$pct',
+                            '${_current!.detectedTitle}$pct',
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,

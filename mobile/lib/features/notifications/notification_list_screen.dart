@@ -38,7 +38,8 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
         _error = null;
       });
     } catch (e) {
-      if (mounted) setState(() => _error = 'Bildirimler yuklenemedi: $e');
+      if (mounted)
+        setState(() => _error = 'Notifications could not be loaded: $e');
     }
   }
 
@@ -53,7 +54,7 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Acil Durum Bildirimleri')),
+      appBar: AppBar(title: const Text('Emergency Notifications')),
       body: _buildBody(),
     );
   }
@@ -64,7 +65,16 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
       return const Center(child: CircularProgressIndicator());
     }
     if (_notifications!.isEmpty) {
-      return const Center(child: Text('Hic bildiriminiz yok.'));
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.notifications_none, size: 54, color: Colors.grey),
+            SizedBox(height: 10),
+            Text('You have no notifications.'),
+          ],
+        ),
+      );
     }
 
     return ListView.builder(
@@ -73,13 +83,26 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
       itemBuilder: (context, i) {
         final n = _notifications![i];
         return Card(
-          color: n.isRead ? null : Colors.red.shade50,
+          margin: const EdgeInsets.only(bottom: 10),
+          color: n.isRead ? null : const Color(0xFFFFEBEE),
           child: ListTile(
-            leading: Icon(
-              n.isRead
-                  ? Icons.notifications_none
-                  : Icons.notification_important,
-              color: n.isRead ? Colors.grey : Colors.red,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            leading: Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: n.isRead
+                    ? Colors.grey.withValues(alpha: 0.10)
+                    : const Color(0xFFC62828).withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                n.isRead
+                    ? Icons.notifications_none
+                    : Icons.notification_important,
+                color: n.isRead ? Colors.grey : const Color(0xFFC62828),
+              ),
             ),
             title: Text(
               n.message,
@@ -88,8 +111,8 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
               ),
             ),
             subtitle: n.incidentId != null
-                ? Text('Olay #${n.incidentId}')
-                : const Text('Sistem bildirimi'),
+                ? Text('Incident #${n.incidentId}')
+                : const Text('System notification'),
             trailing:
                 n.incidentId != null ? const Icon(Icons.chevron_right) : null,
             onTap: () async {

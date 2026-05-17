@@ -12,6 +12,19 @@ enum AppRole {
   const AppRole(this.value);
   final String value;
 
+  String get label {
+    switch (this) {
+      case AppRole.admin:
+        return 'Admin';
+      case AppRole.manager:
+        return 'Manager';
+      case AppRole.employee:
+        return 'Employee';
+      case AppRole.fireResponseUnit:
+        return 'Fire Response Unit';
+    }
+  }
+
   static AppRole fromString(String? v) {
     if (v == null) return AppRole.employee;
     return AppRole.values.firstWhere(

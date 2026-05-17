@@ -1,7 +1,8 @@
 """
-Backend'deki kamera listesini periyodik olarak çeker.
-Her kamera için ayrı bir thread başlatır/durdurur.
+Periodically fetches the camera list from the backend.
+Starts and stops one worker thread per camera.
 """
+
 from __future__ import annotations
 
 import logging
@@ -13,7 +14,7 @@ import requests
 
 logger = logging.getLogger(__name__)
 
-POLL_INTERVAL = 30  # saniye
+POLL_INTERVAL = 30  # seconds
 
 
 class CameraEntry:
@@ -33,8 +34,8 @@ class CameraEntry:
 
 class DynamicCameraManager:
     """
-    Backend'i dinler; yeni kamera eklendiyse thread başlatır.
-    Değişen RTSP URL'i olan kamera için eski thread'i durdurur, yenisini başlatır.
+    Watches the backend camera list and starts a worker for newly added cameras.
+    Restarts the worker when a camera RTSP URL changes.
     """
 
     def __init__(
@@ -64,29 +65,29 @@ class DynamicCameraManager:
                     for c in data.get("cameras", [])
                     if c.get("rtsp_url")
                 ]
-            logger.warning("Backend kamera listesi alınamadı: HTTP %s", resp.status_code)
+            logger.warning("Could not fetch backend camera list: HTTP %s", resp.status_code)
         except Exception as exc:
-            logger.warning("Backend'e bağlanılamadı: %s", exc)
+            logger.warning("Could not connect to backend: %s", exc)
         return None
 
     def _start_camera(self, entry: CameraEntry) -> None:
         stop_event = threading.Event()
         self._stop_flags[entry.camera_id] = stop_event
-        t = self._factory(entry)
-        t.daemon = True
-        t.start()
-        self._active[entry.camera_id] = (entry, t)
-        logger.info("Kamera thread başlatıldı: %s", entry)
+        thread = self._factory(entry)
+        thread.daemon = True
+        thread.start()
+        self._active[entry.camera_id] = (entry, thread)
+        logger.info("Camera thread started: %s", entry)
 
     def _stop_camera(self, camera_id: int) -> None:
         flag = self._stop_flags.pop(camera_id, None)
         if flag:
             flag.set()
         self._active.pop(camera_id, None)
-        logger.info("Kamera thread durduruldu: id=%d", camera_id)
+        logger.info("Camera thread stopped: id=%d", camera_id)
 
     def sync(self) -> None:
-        """Backend ile senkronize et — yeni kameraları başlat, değişenleri/ölenlerini yenile."""
+        """Synchronize with the backend: start new cameras and refresh changed or stopped workers."""
         entries = self._fetch_cameras()
         if entries is None:
             return
@@ -98,30 +99,26 @@ class DynamicCameraManager:
                 current_entry, thread = self._active[cid]
                 new_entry = new_map.get(cid)
                 if new_entry is None:
-                    logger.info("Kamera kaldırıldı (backend'de yok): %s", current_entry)
+                    logger.info("Camera removed from backend: %s", current_entry)
                     self._stop_camera(cid)
                 elif new_entry != current_entry:
                     logger.info(
-                        "Kamera güncellendi (%s -> %s) — thread yenileniyor",
+                        "Camera updated (%s -> %s); restarting worker",
                         current_entry.rtsp_url,
                         new_entry.rtsp_url,
                     )
                     self._stop_camera(cid)
                 elif not thread.is_alive():
-                    # Thread beklenmedik şekilde öldü — yeniden başlat
-                    logger.warning(
-                        "Kamera thread'i durdu, yeniden başlatılıyor: %s", current_entry
-                    )
+                    logger.warning("Camera thread stopped unexpectedly; restarting: %s", current_entry)
                     self._active.pop(cid, None)
 
-            # Yeni / yenilenen / yeniden başlatılacak kameraları başlat
             for cid, entry in new_map.items():
                 if cid not in self._active:
                     self._start_camera(entry)
 
     def run_loop(self) -> None:
-        """Ana thread'den çağrılır; sonsuza kadar senkronize eder."""
-        logger.info("CameraManager başlatıldı (poll=%ds)", POLL_INTERVAL)
+        """Called from the main thread and synchronizes forever."""
+        logger.info("CameraManager started (poll=%ds)", POLL_INTERVAL)
         while True:
             self.sync()
             time.sleep(POLL_INTERVAL)

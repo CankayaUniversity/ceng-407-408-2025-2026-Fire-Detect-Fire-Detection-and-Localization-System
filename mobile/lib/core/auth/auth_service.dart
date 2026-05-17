@@ -49,17 +49,18 @@ class AuthService extends ChangeNotifier {
       );
       final accessToken = r.data['access_token'] as String?;
       final refreshToken = r.data['refresh_token'] as String?;
-      
+
       if (accessToken == null || accessToken.isEmpty) return false;
-      
+
       _token = accessToken;
       await _storage.write(key: StorageKeys.accessToken, value: accessToken);
-      
+
       if (refreshToken != null && refreshToken.isNotEmpty) {
         _refreshToken = refreshToken;
-        await _storage.write(key: StorageKeys.refreshToken, value: refreshToken);
+        await _storage.write(
+            key: StorageKeys.refreshToken, value: refreshToken);
       }
-      
+
       await _fetchMe();
       await _syncFCMToken();
       notifyListeners();
@@ -84,26 +85,28 @@ class AuthService extends ChangeNotifier {
     try {
       _refreshToken ??= await _storage.read(key: StorageKeys.refreshToken);
       if (_refreshToken == null || _refreshToken!.isEmpty) return false;
-      
+
       final dio = Dio(BaseOptions(baseUrl: kBaseUrl));
       final r = await dio.post(
         ApiEndpoints.refresh,
         data: {'refresh_token': _refreshToken},
       );
-      
+
       final newAccessToken = r.data['access_token'] as String?;
       // If the backend returns a new refresh token, we can update it too
       final newRefreshToken = r.data['refresh_token'] as String?;
-      
+
       if (newAccessToken != null && newAccessToken.isNotEmpty) {
         _token = newAccessToken;
-        await _storage.write(key: StorageKeys.accessToken, value: newAccessToken);
-        
+        await _storage.write(
+            key: StorageKeys.accessToken, value: newAccessToken);
+
         if (newRefreshToken != null && newRefreshToken.isNotEmpty) {
-           _refreshToken = newRefreshToken;
-           await _storage.write(key: StorageKeys.refreshToken, value: newRefreshToken);
+          _refreshToken = newRefreshToken;
+          await _storage.write(
+              key: StorageKeys.refreshToken, value: newRefreshToken);
         }
-        
+
         notifyListeners();
         return true;
       }
@@ -125,7 +128,7 @@ class AuthService extends ChangeNotifier {
         // Ignore network errors on logout
       }
     }
-    
+
     _token = null;
     _refreshToken = null;
     _user = null;

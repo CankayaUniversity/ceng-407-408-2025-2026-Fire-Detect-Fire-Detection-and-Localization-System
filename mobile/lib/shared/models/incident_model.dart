@@ -21,6 +21,8 @@ class IncidentModel {
   final DateTime? detectedAt;
   final DateTime? confirmedAt;
   final int? confirmedBy;
+  final List<IncidentSafetyReportModel> safetyReports;
+  final List<IncidentResponseUpdateModel> responseUpdates;
 
   IncidentModel({
     required this.id,
@@ -34,6 +36,8 @@ class IncidentModel {
     this.detectedAt,
     this.confirmedAt,
     this.confirmedBy,
+    this.safetyReports = const [],
+    this.responseUpdates = const [],
   });
 
   factory IncidentModel.fromJson(Map<String, dynamic> json) {
@@ -49,12 +53,21 @@ class IncidentModel {
       detectedAt: _parseBackendDateTime(json['detected_at']),
       confirmedAt: _parseBackendDateTime(json['confirmed_at']),
       confirmedBy: json['confirmed_by'] as int?,
+      safetyReports: (json['safety_reports'] as List? ?? const [])
+          .map((e) =>
+              IncidentSafetyReportModel.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      responseUpdates: (json['response_updates'] as List? ?? const [])
+          .map((e) =>
+              IncidentResponseUpdateModel.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
   }
 
   bool get canStream => rtspUrl != null && rtspUrl!.isNotEmpty;
   bool get isDetected => status == 'DETECTED';
   bool get isConfirmed => status == 'CONFIRMED';
+  bool get isDismissed => status == 'DISMISSED';
 
   String get riskLevel {
     final score = confidence;
@@ -68,15 +81,76 @@ class IncidentModel {
   String get riskLevelLabel {
     switch (riskLevel) {
       case 'CRITICAL':
-        return 'Kritik Risk';
+        return 'Critical Risk';
       case 'HIGH':
-        return 'Yuksek Risk';
+        return 'High Risk';
       case 'MEDIUM':
-        return 'Orta Risk';
+        return 'Medium Risk';
       case 'LOW':
-        return 'Dusuk Risk';
+        return 'Low Risk';
       default:
-        return 'Risk Bilinmiyor';
+        return 'Risk Unknown';
+    }
+  }
+}
+
+class IncidentSafetyReportModel {
+  final int userId;
+  final String userName;
+  final String status;
+  final DateTime? createdAt;
+
+  IncidentSafetyReportModel({
+    required this.userId,
+    required this.userName,
+    required this.status,
+    this.createdAt,
+  });
+
+  factory IncidentSafetyReportModel.fromJson(Map<String, dynamic> json) {
+    return IncidentSafetyReportModel(
+      userId: json['user_id'] as int,
+      userName: json['user_name'] as String? ?? 'Employee #${json['user_id']}',
+      status: json['status'] as String? ?? 'SAFE',
+      createdAt: _parseBackendDateTime(json['created_at']),
+    );
+  }
+
+  bool get needsHelp => status == 'NEED_HELP';
+  String get label => needsHelp ? 'Needs Help' : 'Safe';
+}
+
+class IncidentResponseUpdateModel {
+  final int userId;
+  final String userName;
+  final String status;
+  final DateTime? createdAt;
+
+  IncidentResponseUpdateModel({
+    required this.userId,
+    required this.userName,
+    required this.status,
+    this.createdAt,
+  });
+
+  factory IncidentResponseUpdateModel.fromJson(Map<String, dynamic> json) {
+    return IncidentResponseUpdateModel(
+      userId: json['user_id'] as int,
+      userName: json['user_name'] as String? ?? 'Responder #${json['user_id']}',
+      status: json['status'] as String? ?? 'DISPATCHED',
+      createdAt: _parseBackendDateTime(json['created_at']),
+    );
+  }
+
+  String get label {
+    switch (status) {
+      case 'ARRIVED':
+        return 'Arrived on scene';
+      case 'UNDER_CONTROL':
+        return 'Under control';
+      case 'DISPATCHED':
+      default:
+        return 'Dispatched';
     }
   }
 }

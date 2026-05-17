@@ -17,6 +17,11 @@ backend/flamescope.db
 detector/.env
 detector/snapshots/
 snapshots/
+detector/*.jpg
+detector/*.jpeg
+detector/*.png
+detector/*.log
+detector/*.err.log
 
 # Dataset görselleri (büyük, git'e koyma)
 detector/training/dataset/train/fire/
@@ -42,6 +47,12 @@ mobile/.packages
 mobile/build/
 mobile/*.iml
 *.jks
+
+# Local run helpers / temporary demo state
+.tools/*.log
+.tools/*.out
+.tools/*.err
+demo-videos/*.restart
 
 # IDE
 .idea/

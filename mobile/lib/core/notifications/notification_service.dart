@@ -32,7 +32,7 @@ class FireIncidentEvent {
       incidentId: json['incident_id'] as int,
       cameraId: json['camera_id'] as int? ?? 0,
       cameraName:
-          json['camera_name'] as String? ?? 'Kamera #${json['camera_id']}',
+          json['camera_name'] as String? ?? 'Camera #${json['camera_id']}',
       cameraLocation: json['camera_location'] as String?,
       confidence: (json['confidence'] as num?)?.toDouble(),
       snapshotUrl: normalizeBackendAssetUrl(json['snapshot_url'] as String?),
@@ -40,6 +40,20 @@ class FireIncidentEvent {
           json['detected_at'] as String? ?? json['confirmed_at'] as String?,
     );
   }
+
+  bool get isSmokeScenario {
+    final haystack =
+        '${cameraName.toLowerCase()} ${cameraLocation?.toLowerCase() ?? ''}';
+    return haystack.contains('smoke') ||
+        haystack.contains('outdoor') ||
+        haystack.contains('duman');
+  }
+
+  String get detectedTitle =>
+      isSmokeScenario ? 'SMOKE DETECTED' : 'FIRE DETECTED';
+
+  String get confirmedTitle =>
+      isSmokeScenario ? 'SMOKE RISK CONFIRMED' : 'FIRE CONFIRMED';
 }
 
 class NotificationService extends ChangeNotifier {
@@ -102,7 +116,7 @@ class NotificationService extends ChangeNotifier {
     _sub = _channel!.stream.listen(
       _onMessage,
       onError: (e) {
-        debugPrint('[WS] Hata: $e - 5s sonra yeniden baglaniliyor');
+        debugPrint('[WS] Error: $e - 5s sonra yeniden baglaniliyor');
         Future.delayed(const Duration(seconds: 5), _reconnect);
       },
       onDone: () {
@@ -133,6 +147,15 @@ class NotificationService extends ChangeNotifier {
           event,
           data['message'] as String?,
         );
+      } else if (data['type'] == 'ops_update') {
+        _hasUnread = true;
+        notifyListeners();
+        _showOpsUpdateNotification(
+          title: data['title'] as String? ?? 'Incident Update',
+          body: data['message'] as String? ??
+              'A new incident update was received.',
+          incidentId: data['incident_id'] as int? ?? 0,
+        );
       }
     } catch (e) {
       debugPrint('[WS] Mesaj parse hatasi: $e');
@@ -146,8 +169,8 @@ class NotificationService extends ChangeNotifier {
     await _showLocalAlert(
       id: event.incidentId,
       channelId: 'fire_alerts',
-      channelName: 'Yangin Uyarilari',
-      title: 'YANGIN TESPIT EDILDI$pct',
+      channelName: 'Fire Alerts',
+      title: '${event.detectedTitle}$pct',
       body:
           '${event.cameraName}${event.cameraLocation != null ? " - ${event.cameraLocation}" : ""}',
     );
@@ -158,18 +181,32 @@ class NotificationService extends ChangeNotifier {
     String? serverMessage,
   ) async {
     final pct = event.confidence != null
-        ? ' Risk skoru: %${(event.confidence! * 100).toStringAsFixed(0)}.'
+        ? ' Risk score: %${(event.confidence! * 100).toStringAsFixed(0)}.'
         : '';
     final body = serverMessage ??
-        'Onaylanan yangin alarmi: ${event.cameraName}'
+        'Confirmed fire alarm: ${event.cameraName}'
             '${event.cameraLocation != null ? " - ${event.cameraLocation}" : ""}.'
-            '$pct Lutfen guvenli cikis yonlendirmelerini takip edin.';
+            '$pct Please follow safe exit instructions.';
 
     await _showLocalAlert(
       id: event.incidentId + 100000,
       channelId: 'confirmed_fire_alerts',
-      channelName: 'Onayli Yangin Alarmlari',
-      title: 'ACIL DURUM: YANGIN ONAYLANDI',
+      channelName: 'Confirmed Fire Alarms',
+      title: 'EMERGENCY: ${event.confirmedTitle}',
+      body: body,
+    );
+  }
+
+  Future<void> _showOpsUpdateNotification({
+    required String title,
+    required String body,
+    required int incidentId,
+  }) async {
+    await _showLocalAlert(
+      id: incidentId + 200000 + DateTime.now().second,
+      channelId: 'incident_updates',
+      channelName: 'Incident Updates',
+      title: title,
       body: body,
     );
   }
@@ -222,7 +259,7 @@ class NotificationService extends ChangeNotifier {
     await _showLocalAlert(
       id: DateTime.now().millisecond,
       channelId: 'push_alerts',
-      channelName: 'Genel Bildirimler',
+      channelName: 'Genel Notificationler',
       title: title,
       body: body,
     );

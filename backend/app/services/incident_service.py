@@ -140,18 +140,18 @@ class IncidentService:
         result = await db.execute(select(User).where(User.role.in_(list(target_roles))))
         target_users = result.scalars().all()
 
-        camera_name = incident.camera.name if incident.camera else "Bilinmeyen Kamera"
+        camera_name = incident.camera.name if incident.camera else "Unknown Camera"
         camera_location = incident.camera.location if incident.camera else None
         location_text = f" - {camera_location}" if camera_location else ""
-        risk_text = f" Risk skoru: %{round(incident.confidence * 100)}." if incident.confidence is not None else ""
+        risk_text = f" Risk score: {round(incident.confidence * 100)}%." if incident.confidence is not None else ""
         reason_text = {
-            "manager": "Yonetici tarafindan onaylandi",
-            "critical_risk": "Kritik risk seviyesi nedeniyle otomatik acil alarma yukseltildi",
-            "timeout": "Yonetici yaniti gelmedigi icin otomatik acil alarma yukseltildi",
-        }.get(reason, "Acil durum alarmi onaylandi")
+            "manager": "Confirmed by manager",
+            "critical_risk": "Automatically escalated due to critical risk level",
+            "timeout": "Automatically escalated because no manager response was received",
+        }.get(reason, "Emergency alarm confirmed")
         message = (
             f"{reason_text}: {camera_name}{location_text}."
-            f"{risk_text} Lutfen en yakin guvenli cikis yonlendirmelerini takip edin."
+            f"{risk_text} Please follow the nearest safe exit instructions."
         )
 
         for user in target_users:
@@ -163,7 +163,7 @@ class IncidentService:
 
                     msg = messaging.Message(
                         notification=messaging.Notification(
-                            title="FlameScope Acil Durum",
+                            title="FlameScope Emergency",
                             body=message,
                         ),
                         token=user.fcm_token,

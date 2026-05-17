@@ -2,6 +2,7 @@ import 'package:flamescope/core/api/api_client.dart';
 import 'package:flamescope/core/auth/auth_service.dart';
 import 'package:flamescope/core/constants/api_constants.dart';
 import 'package:flamescope/core/router/app_router.dart';
+import 'package:flamescope/features/home/widgets/home_header_card.dart';
 import 'package:flamescope/shared/models/incident_model.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -45,10 +46,9 @@ class _FireResponseHomeScreenState extends State<FireResponseHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.watch<AuthService>().user;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Yangin Mudahale'),
+        title: const Text('Fire Response'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -64,21 +64,20 @@ class _FireResponseHomeScreenState extends State<FireResponseHomeScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            if (user != null)
-              Card(
-                child: ListTile(
-                  leading: const Icon(Icons.person),
-                  title: Text(user.fullName),
-                  subtitle: Text(user.email),
-                ),
-              ),
+            const HomeHeaderCard(
+              title: 'Response Operations',
+              subtitle: 'Track confirmed emergencies by risk priority',
+              icon: Icons.local_fire_department_outlined,
+              accent: Color(0xFFC62828),
+            ),
             const SizedBox(height: 16),
             _ResponseQueue(incidents: _incidents, loading: _loading),
             const SizedBox(height: 16),
-            ListTile(
-              leading: const Icon(Icons.emergency),
-              title: const Text('Acil Durum Bildirimleri'),
-              trailing: const Icon(Icons.chevron_right),
+            HomeActionTile(
+              icon: Icons.emergency_outlined,
+              title: 'Emergency Notifications',
+              subtitle: 'Open assigned alerts and response messages',
+              color: const Color(0xFFC62828),
               onTap: () => context.push(AppRouter.notificationList),
             ),
           ],
@@ -111,10 +110,9 @@ class _ResponseQueue extends StatelessWidget {
     if (incidents.isEmpty) {
       return const Card(
         child: ListTile(
-          leading: Icon(Icons.check_circle_outline, color: Colors.green),
-          title: Text('Aktif mudahale gerektiren olay yok'),
-          subtitle:
-              Text('Onaylanan yanginlar risk onceligine gore listelenir.'),
+          leading: Icon(Icons.check_circle_outline, color: Color(0xFF2E7D32)),
+          title: Text('No active response required'),
+          subtitle: Text('Confirmed fires are listed by risk priority.'),
         ),
       );
     }
@@ -126,8 +124,10 @@ class _ResponseQueue extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Mudahale Kuyrugu',
-              style: Theme.of(context).textTheme.titleMedium,
+              'Response Queue',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
             ),
             const SizedBox(height: 8),
             for (final incident in incidents.take(5))
@@ -136,11 +136,11 @@ class _ResponseQueue extends StatelessWidget {
                 leading: Icon(
                   Icons.local_fire_department,
                   color: (incident.confidence ?? 0) >= 0.80
-                      ? Colors.red
-                      : Colors.orange,
+                      ? const Color(0xFFC62828)
+                      : const Color(0xFFE65100),
                 ),
                 title:
-                    Text(incident.cameraName ?? 'Kamera #${incident.cameraId}'),
+                    Text(incident.cameraName ?? 'Camera #${incident.cameraId}'),
                 subtitle: Text(
                   '${incident.cameraLocation ?? '-'} - ${incident.riskLevelLabel}',
                 ),

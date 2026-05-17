@@ -7,6 +7,7 @@ import 'package:flamescope/core/auth/auth_service.dart';
 import 'package:flamescope/core/constants/app_constants.dart';
 import 'package:flamescope/core/constants/api_constants.dart';
 import 'package:flamescope/core/router/app_router.dart';
+import 'package:flamescope/core/utils/display_formatters.dart';
 import 'package:flamescope/shared/models/user_model.dart';
 
 class UserListScreen extends StatefulWidget {
@@ -38,7 +39,7 @@ class _UserListScreenState extends State<UserListScreen> {
     if (role != AppRole.admin) {
       setState(() {
         _loading = false;
-        _error = 'Bu sayfaya sadece yönetici (ADMIN) erişebilir.';
+        _error = 'Only admins can access this page.';
       });
       return;
     }
@@ -59,8 +60,8 @@ class _UserListScreenState extends State<UserListScreen> {
       if (mounted) {
         setState(() {
           _error = e is DioException
-              ? (e.response?.statusMessage ?? 'Bağlantı hatası')
-              : 'Yüklenemedi';
+              ? (e.response?.statusMessage ?? 'Connection error')
+              : 'Could not load';
           _loading = false;
         });
       }
@@ -71,18 +72,18 @@ class _UserListScreenState extends State<UserListScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Kullanıcıyı pasife al'),
+        title: const Text('Deactivate User'),
         content: Text(
-          '${u.fullName} (${u.email}) hesabını pasife almak istediğinize emin misiniz? Giriş yapamaz.',
+          '${u.fullName} (${u.email}) account? They will not be able to sign in.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('İptal'),
+            child: const Text('Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Pasife Al'),
+            child: const Text('Deactivate'),
           ),
         ],
       ),
@@ -98,7 +99,7 @@ class _UserListScreenState extends State<UserListScreen> {
       await dio.patch(ApiEndpoints.userDeactivate(userId));
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Kullanıcı pasife alındı')),
+          const SnackBar(content: Text('User deactivated')),
         );
         _load();
       }
@@ -114,7 +115,7 @@ class _UserListScreenState extends State<UserListScreen> {
       await dio.patch(ApiEndpoints.userReactivate(userId));
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Kullanıcı yeniden aktif edildi')),
+          const SnackBar(content: Text('User reactivated')),
         );
         _load();
       }
@@ -125,10 +126,11 @@ class _UserListScreenState extends State<UserListScreen> {
 
   void _showErrorSnackBar(dynamic e) {
     final msg = e is DioException
-        ? (e.response?.data is Map && (e.response?.data as Map)['detail'] != null
+        ? (e.response?.data is Map &&
+                (e.response?.data as Map)['detail'] != null
             ? (e.response?.data as Map)['detail'].toString()
-            : e.response?.statusMessage ?? 'İşlem başarısız')
-        : 'İşlem başarısız';
+            : e.response?.statusMessage ?? 'Operation failed')
+        : 'Operation failed';
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
@@ -145,41 +147,45 @@ class _UserListScreenState extends State<UserListScreen> {
           SwitchListTile(
             value: _showInactiveUsers,
             onChanged: (v) => setState(() => _showInactiveUsers = v),
-            title: const Text('Pasif kullanıcıları göster'),
+            title: const Text('Show inactive users'),
           ),
           const SizedBox(height: 8),
           if (!_showInactiveUsers) ...[
             if (active.isEmpty)
-              const Center(child: Padding(
+              const Center(
+                  child: Padding(
                 padding: EdgeInsets.all(24),
-                child: Text('Aktif kullanıcı yok'),
+                child: Text('No active users'),
               ))
             else
               ...active.map((u) => _userCard(context, u, currentUser)),
           ] else ...[
             if (active.isEmpty && inactive.isEmpty)
-              const Center(child: Padding(
+              const Center(
+                  child: Padding(
                 padding: EdgeInsets.all(24),
-                child: Text('Kullanıcı yok'),
+                child: Text('No users'),
               ))
             else ...[
               if (active.isNotEmpty) ...[
                 const Padding(
                   padding: EdgeInsets.only(top: 8, bottom: 4),
-                  child: Text('Aktif Kullanıcılar', style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  )),
+                  child: Text('Active Users',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      )),
                 ),
                 ...active.map((u) => _userCard(context, u, currentUser)),
               ],
               if (inactive.isNotEmpty) ...[
                 const Padding(
                   padding: EdgeInsets.only(top: 16, bottom: 4),
-                  child: Text('Pasif Kullanıcılar', style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  )),
+                  child: Text('Inactive Users',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      )),
                 ),
                 ...inactive.map((u) => _userCard(context, u, currentUser)),
               ],
@@ -203,18 +209,29 @@ class _UserListScreenState extends State<UserListScreen> {
           color: u.isActive ? null : Colors.grey,
         ),
         title: Text(u.fullName),
-        subtitle: Text(
-          '${u.email} · ${u.role.value}${u.isActive ? '' : ' · Pasif'}',
+        subtitle: Wrap(
+          spacing: 8,
+          runSpacing: 6,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text(u.email),
+            RoleBadge(role: u.role, compact: true),
+            if (!u.isActive)
+              const Text(
+                'Inactive',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+          ],
         ),
         trailing: canDeactivate
             ? TextButton(
                 onPressed: () => _confirmDeactivate(context, u),
-                child: const Text('Pasife Al'),
+                child: const Text('Deactivate'),
               )
             : !u.isActive
                 ? TextButton(
                     onPressed: () => _reactivate(u.id),
-                    child: const Text('Aktif Et'),
+                    child: const Text('Reactivate'),
                   )
                 : null,
       ),
@@ -225,7 +242,7 @@ class _UserListScreenState extends State<UserListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Kullanıcı Yönetimi'),
+        title: const Text('User Management'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
@@ -242,7 +259,7 @@ class _UserListScreenState extends State<UserListScreen> {
                       const SizedBox(height: 16),
                       FilledButton(
                         onPressed: _load,
-                        child: const Text('Tekrar Dene'),
+                        child: const Text('Retry'),
                       ),
                     ],
                   ),

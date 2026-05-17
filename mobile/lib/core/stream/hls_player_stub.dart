@@ -58,7 +58,7 @@ class _HlsPlayerWidgetState extends State<HlsPlayerWidget> {
       if (mounted) setState(() {});
     } catch (e) {
       if (mounted) {
-        setState(() => _error = 'Yayin acilamadi: $hlsUrl');
+        setState(() => _error = 'Stream could not be opened: $hlsUrl');
       }
       await controller.dispose();
       if (mounted && identical(_controller, controller)) {
@@ -129,7 +129,7 @@ class _MessageView extends StatelessWidget {
             const SizedBox(height: 16),
             FilledButton(
               onPressed: onRetry,
-              child: const Text('Tekrar Dene'),
+              child: const Text('Retry'),
             ),
           ],
         ),

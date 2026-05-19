@@ -547,6 +547,8 @@ def main() -> None:
             model_path=settings.yolo_model_path,
             confidence_threshold=settings.yolo_confidence_threshold,
             imgsz=settings.yolo_imgsz,
+            batch_size=settings.yolo_batch_size,
+            batch_wait_ms=settings.yolo_batch_wait_ms,
         )
         logger.info("YOLO detector loaded. model=%s", settings.yolo_model_path or "(none)")
     else:

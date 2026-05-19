@@ -62,6 +62,11 @@ class Settings(BaseSettings):
     # YOLO input image size used during inference
     yolo_imgsz: int = 512
 
+    # YOLO CPU inference batching. Camera threads enqueue frames; one worker
+    # briefly collects requests and runs them together.
+    yolo_batch_size: int = 4
+    yolo_batch_wait_ms: int = 20
+
     # Detection tuning (reduce false alarms)
     detection_fire_ratio_threshold: float = 0.005  # min ratio of fire-like pixels to total
     detection_min_fire_area_ratio: float = 0.0  # min ratio of largest fire blob to total (filter tiny spots)

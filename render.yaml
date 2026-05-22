@@ -24,3 +24,5 @@ services:
         value: incident-snapshots
       - key: FIREBASE_CREDENTIALS_JSON_BASE64
         sync: false
+      - key: PYTHON_VERSION
+        value: 3.12.13

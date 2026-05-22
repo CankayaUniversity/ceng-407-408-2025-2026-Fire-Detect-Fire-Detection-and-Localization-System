@@ -27,6 +27,8 @@ class Settings(BaseSettings):
 
     # Where to POST incidents
     incidents_detected_path: str = "/incidents/detected"
+    snapshot_upload_path: str = "/snapshots/upload"
+    snapshot_upload_timeout_seconds: int = 15
 
     # Snapshots
     snapshot_dir: str = "../snapshots"

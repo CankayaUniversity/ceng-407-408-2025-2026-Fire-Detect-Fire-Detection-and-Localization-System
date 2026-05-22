@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import get_settings
 from app.database.session import init_db
-from app.routers import auth, me, cameras, incidents, users, ws, notifications
+from app.routers import auth, me, cameras, incidents, users, ws, notifications, snapshots
 from app.core.firebase import init_firebase
 
 settings = get_settings()
@@ -39,6 +39,7 @@ app.include_router(me.router)
 app.include_router(users.router)
 app.include_router(cameras.router)
 app.include_router(incidents.router)
+app.include_router(snapshots.router)
 app.include_router(ws.router)
 app.include_router(notifications.router)
 

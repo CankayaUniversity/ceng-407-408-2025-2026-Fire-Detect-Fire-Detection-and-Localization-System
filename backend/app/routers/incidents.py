@@ -237,6 +237,7 @@ async def create_detected_incident(
     )
     incident = await IncidentService.get_by_id(db, incident.id)
     settings = get_settings()
+    await IncidentService.dispatch_detected_alert(db, incident)
 
     if data.confidence is not None and data.confidence >= settings.critical_risk_threshold:
         incident = await IncidentService.auto_confirm_if_pending(
@@ -259,18 +260,6 @@ async def create_detected_incident(
             confirmed_at=incident.confirmed_at,
             confirmed_by=incident.confirmed_by,
         )
-
-    # Tüm bağlı mobil/web client'lara gerçek zamanlı bildirim gönder
-    await manager.send_to_roles({
-        "type": "fire_detected",
-        "incident_id": incident.id,
-        "camera_id": incident.camera_id,
-        "camera_name": camera.name,
-        "camera_location": camera.location,
-        "confidence": data.confidence,
-        "snapshot_url": snapshot_url,
-        "detected_at": incident.detected_at.isoformat() if incident.detected_at else None,
-    }, {Role.ADMIN, Role.MANAGER})
 
     should_auto_escalate = (
         data.confidence is not None

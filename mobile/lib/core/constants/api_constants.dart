@@ -1,21 +1,47 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 
-/// Backend host.
-/// Physical phones should pass --dart-define=FLAMESCOPE_API_HOST=<LAN_IP>.
-/// The default is Android emulator's host alias.
+/// Backend host for local/LAN development.
+/// Physical phones can pass --dart-define=FLAMESCOPE_API_HOST=<LAN_IP>.
 const String kLanIp = String.fromEnvironment(
   'FLAMESCOPE_API_HOST',
   defaultValue: '10.0.2.2',
 );
 
+/// Full backend URL override for cloud deployments.
+/// Example: --dart-define=FLAMESCOPE_API_BASE_URL=https://flamescope.onrender.com
+const String _apiBaseUrlOverride = String.fromEnvironment(
+  'FLAMESCOPE_API_BASE_URL',
+  defaultValue: '',
+);
+
+String _trimTrailingSlash(String value) {
+  var result = value.trim();
+  while (result.endsWith('/')) {
+    result = result.substring(0, result.length - 1);
+  }
+  return result;
+}
+
 /// Backend API base URL.
-/// - Web (Chrome): localhost:8000
-/// - Android fiziksel cihaz (aynı Wi-Fi): kLanIp:8000
-/// - Android emülatör: 10.0.2.2:8000
-String get kBaseUrl => kIsWeb ? 'http://localhost:8000' : 'http://$kLanIp:8000';
+/// - Web local: localhost:8000
+/// - Android emulator local: 10.0.2.2:8000
+/// - Cloud/demo: pass FLAMESCOPE_API_BASE_URL
+String get kBaseUrl {
+  final override = _trimTrailingSlash(_apiBaseUrlOverride);
+  if (override.isNotEmpty) return override;
+  return kIsWeb ? 'http://localhost:8000' : 'http://$kLanIp:8000';
+}
 
 /// WebSocket URL for real-time fire notifications.
-String get kWsUrl => kIsWeb ? 'ws://localhost:8000/ws' : 'ws://$kLanIp:8000/ws';
+String get kWsUrl {
+  final apiBase = Uri.parse(kBaseUrl);
+  return Uri(
+    scheme: apiBase.scheme == 'https' ? 'wss' : 'ws',
+    host: apiBase.host,
+    port: apiBase.hasPort ? apiBase.port : null,
+    path: '/ws',
+  ).toString();
+}
 
 String? normalizeBackendAssetUrl(String? rawUrl) {
   final raw = rawUrl?.trim();

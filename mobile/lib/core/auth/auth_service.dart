@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:dio/dio.dart';
@@ -11,6 +13,15 @@ class AuthService extends ChangeNotifier {
   String? _token;
   String? _refreshToken;
   UserModel? _user;
+  StreamSubscription<String>? _fcmTokenSub;
+
+  AuthService() {
+    try {
+      _fcmTokenSub = FirebaseMessaging.instance.onTokenRefresh.listen((_) {
+        _syncFCMToken();
+      });
+    } catch (_) {}
+  }
 
   String? get token => _token;
   UserModel? get user => _user;
@@ -19,7 +30,10 @@ class AuthService extends ChangeNotifier {
   Future<void> loadToken() async {
     _token = await _storage.read(key: StorageKeys.accessToken);
     _refreshToken = await _storage.read(key: StorageKeys.refreshToken);
-    if (_token != null) await _fetchMe();
+    if (_token != null) {
+      await _fetchMe();
+      await _syncFCMToken();
+    }
     notifyListeners();
   }
 
@@ -135,5 +149,11 @@ class AuthService extends ChangeNotifier {
     await _storage.delete(key: StorageKeys.accessToken);
     await _storage.delete(key: StorageKeys.refreshToken);
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _fcmTokenSub?.cancel();
+    super.dispose();
   }
 }

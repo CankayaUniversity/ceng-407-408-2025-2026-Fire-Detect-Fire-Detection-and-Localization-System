@@ -73,6 +73,51 @@ class IncidentService:
         return False
 
     @staticmethod
+    async def dispatch_detected_alert(db: AsyncSession, incident: Incident) -> None:
+        from app.models.notification import Notification
+        from app.models.user import User
+        from app.services.push_service import send_push_notification
+        from app.websocket_manager import manager
+
+        target_roles = {Role.ADMIN, Role.MANAGER}
+        result = await db.execute(
+            select(User).where(
+                User.role.in_(list(target_roles)),
+                User.is_active.is_(True),
+            )
+        )
+        target_users = result.scalars().all()
+
+        camera_name = incident.camera.name if incident.camera else "Unknown Camera"
+        camera_location = incident.camera.location if incident.camera else None
+        location_text = f" - {camera_location}" if camera_location else ""
+        risk_text = f" Risk score: {round(incident.confidence * 100)}%." if incident.confidence is not None else ""
+        message = f"Fire or smoke detected: {camera_name}{location_text}.{risk_text} Please review the alarm."
+
+        event_data = {
+            "type": "fire_detected",
+            "incident_id": incident.id,
+            "camera_id": incident.camera_id,
+            "camera_name": camera_name,
+            "camera_location": camera_location,
+            "confidence": incident.confidence,
+            "snapshot_url": incident.snapshot_url,
+            "detected_at": incident.detected_at.isoformat() if incident.detected_at else None,
+        }
+
+        for user in target_users:
+            db.add(Notification(user_id=user.id, incident_id=incident.id, message=message))
+            send_push_notification(
+                user,
+                title="FlameScope Detection Alert",
+                body=message,
+                data=event_data,
+            )
+
+        await db.flush()
+        await manager.send_to_roles(event_data, target_roles)
+
+    @staticmethod
     async def confirm(db: AsyncSession, incident_id: int, user_id: int) -> Incident | None:
         return await IncidentService._confirm(
             db,
@@ -135,9 +180,15 @@ class IncidentService:
     ) -> None:
         from app.models.notification import Notification
         from app.models.user import User
+        from app.services.push_service import send_push_notification
         from app.websocket_manager import manager
 
-        result = await db.execute(select(User).where(User.role.in_(list(target_roles))))
+        result = await db.execute(
+            select(User).where(
+                User.role.in_(list(target_roles)),
+                User.is_active.is_(True),
+            )
+        )
         target_users = result.scalars().all()
 
         camera_name = incident.camera.name if incident.camera else "Unknown Camera"
@@ -156,23 +207,22 @@ class IncidentService:
 
         for user in target_users:
             db.add(Notification(user_id=user.id, incident_id=incident.id, message=message))
-
-            if user.fcm_token:
-                try:
-                    from firebase_admin import messaging
-
-                    msg = messaging.Message(
-                        notification=messaging.Notification(
-                            title="FlameScope Emergency",
-                            body=message,
-                        ),
-                        token=user.fcm_token,
-                    )
-                    messaging.send(msg)
-                except Exception as exc:
-                    import logging
-
-                    logging.getLogger(__name__).error("FCM send failed for user %s: %s", user.id, exc)
+            send_push_notification(
+                user,
+                title="FlameScope Emergency",
+                body=message,
+                data={
+                    "type": "fire_confirmed",
+                    "incident_id": incident.id,
+                    "camera_id": incident.camera_id,
+                    "camera_name": camera_name,
+                    "camera_location": camera_location,
+                    "confidence": incident.confidence,
+                    "snapshot_url": incident.snapshot_url,
+                    "confirmed_at": incident.confirmed_at.isoformat() if incident.confirmed_at else None,
+                    "confirmation_reason": reason,
+                },
+            )
 
         await db.flush()
 

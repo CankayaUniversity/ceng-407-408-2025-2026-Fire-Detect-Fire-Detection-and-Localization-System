@@ -47,6 +47,10 @@ class Settings(BaseSettings):
     # Detector implementation: "mock" (HSV heuristic), "cnn", or "yolo"
     detector_mode: str = "mock"
 
+    # Legacy demo shortcuts are disabled by default so every camera uses the
+    # selected detector over the full frame.
+    demo_video_shortcuts_enabled: bool = False
+
     # CNN model path (relative to detector/ dir or absolute)
     # Set via env: CNN_MODEL_PATH=training/fire_model.pt
     cnn_model_path: str | None = None

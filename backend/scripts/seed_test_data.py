@@ -28,7 +28,7 @@ TEST_USERS = [
 
 TEST_CAMERAS = [
     {"name": "Lobby Camera", "location": "Entrance Floor", "rtsp_url": "rtsp://192.168.1.100:554/lobby"},
-    {"name": "Computer Webcam", "location": "This Computer", "rtsp_url": "rtsp://192.168.1.100:8555/webcam"},
+    {"name": "Computer Webcam", "location": "This Computer", "rtsp_url": "rtsp://192.168.1.100:8554/webcam"},
     {"name": "Outdoor Smoke Camera", "location": "Outdoor Area", "rtsp_url": "rtsp://192.168.1.100:8555/outdoor"},
 ]
 

@@ -3,7 +3,7 @@ Create/update the local demo camera used by the detector.
 
 Usage:
   python -m scripts.setup_demo_camera --host 192.168.1.35
-  python -m scripts.setup_demo_camera --rtsp-url rtsp://192.168.1.35:8555/webcam
+  python -m scripts.setup_demo_camera --rtsp-url rtsp://192.168.1.35:8554/webcam
 """
 
 import argparse
@@ -26,7 +26,7 @@ def build_rtsp_url(host: str, port: int) -> str:
 async def main() -> None:
     parser = argparse.ArgumentParser(description="Configure Flame Scope demo webcam.")
     parser.add_argument("--host", help="Computer LAN IP, e.g. 192.168.1.35")
-    parser.add_argument("--port", type=int, default=8555, help="RTSP port, default: 8555")
+    parser.add_argument("--port", type=int, default=8554, help="RTSP port, default: 8554")
     parser.add_argument("--rtsp-url", help="Full RTSP URL. Overrides --host/--port.")
     parser.add_argument("--name", default="Computer Webcam")
     parser.add_argument("--location", default="This Computer")

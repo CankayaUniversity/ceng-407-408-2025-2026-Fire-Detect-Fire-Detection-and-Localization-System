@@ -262,8 +262,17 @@ def _detect_webcam_small_flame(entry: CameraEntry, frame) -> DetectionResult | N
     return DetectionResult(True, confidence, flame_ratio, largest_blob_ratio, bbox)
 
 
-def _snapshot_frame_for_incident(entry: CameraEntry, frame, result: DetectionResult):
-    if not _is_webcam_demo_camera(entry) or not result.bbox:
+def _snapshot_frame_for_incident(
+    entry: CameraEntry,
+    frame,
+    result: DetectionResult,
+    demo_video_shortcuts_enabled: bool = False,
+):
+    if (
+        not demo_video_shortcuts_enabled
+        or not _is_webcam_demo_camera(entry)
+        or not result.bbox
+    ):
         return frame
 
     height, width = frame.shape[:2]
@@ -398,6 +407,7 @@ def camera_loop(
     consecutive_required: int,
     detector: BaseFireDetector,
     notifier: BackendNotifier,
+    demo_video_shortcuts_enabled: bool = False,
 ) -> None:
     """
     Long-running loop for one camera. Reconnects automatically if the stream drops.
@@ -416,7 +426,7 @@ def camera_loop(
     last_lobby_demo_marker = _lobby_demo_marker_mtime() or 0.0
     last_outdoor_demo_marker = _outdoor_demo_marker_mtime() or 0.0
 
-    if _is_lobby_demo_camera(entry):
+    if demo_video_shortcuts_enabled and _is_lobby_demo_camera(entry):
         logger.info("[%s] Lobby demo mode: watching restart marker without waiting for RTSP.", entry.name)
         while True:
             marker_mtime = _lobby_demo_marker_mtime()
@@ -425,7 +435,7 @@ def camera_loop(
                 _send_lobby_demo_incident(entry, notifier, consecutive_required)
             time.sleep(0.2)
 
-    if _is_outdoor_demo_camera(entry):
+    if demo_video_shortcuts_enabled and _is_outdoor_demo_camera(entry):
         logger.info("[%s] Outdoor demo mode: watching restart marker without waiting for RTSP.", entry.name)
         while True:
             marker_mtime = _outdoor_demo_marker_mtime()
@@ -443,7 +453,11 @@ def camera_loop(
         try:
             reader = StreamReader(entry.rtsp_url)
         except RuntimeError as exc:
-            delay = 0.5 if _is_lobby_demo_camera(entry) else _RETRY_DELAYS[min(retry_idx, len(_RETRY_DELAYS) - 1)]
+            delay = (
+                0.5
+                if demo_video_shortcuts_enabled and _is_lobby_demo_camera(entry)
+                else _RETRY_DELAYS[min(retry_idx, len(_RETRY_DELAYS) - 1)]
+            )
             logger.warning(
                 "Camera could not be opened [%s]: %s; retrying in %.1fs",
                 entry.name, exc, delay,
@@ -455,7 +469,7 @@ def camera_loop(
         retry_idx = 0
         logger.info("Camera connected: %s", entry.name)
         connection_started_at = time.time()
-        warmup_frames = 20 if _is_lobby_demo_camera(entry) else 0
+        warmup_frames = 20 if demo_video_shortcuts_enabled and _is_lobby_demo_camera(entry) else 0
 
         # ── Frame döngüsü ──────────────────────────────────────────
         try:
@@ -464,13 +478,20 @@ def camera_loop(
                     time.sleep(0.05)
                     continue
                 detection_frame = _frame_for_detection(entry, frame)
-                if _is_webcam_demo_camera(entry):
-                    result = _detect_webcam_small_flame(entry, detection_frame) or DetectionResult(False, 0.0, 0.0, 0.0)
-                else:
-                    result = detector.detect(detection_frame)
+                result = detector.detect(detection_frame)
+
+                if demo_video_shortcuts_enabled:
                     calibrated_result = _detect_calibrated_early_flame(entry, detection_frame)
                     if calibrated_result and calibrated_result.has_fire:
                         result = calibrated_result
+                    webcam_result = _detect_webcam_small_flame(entry, detection_frame)
+                    if (
+                        webcam_result
+                        and webcam_result.has_fire
+                        and webcam_result.confidence > result.confidence
+                    ):
+                        result = webcam_result
+
                 if not result.has_fire:
                     consecutive_fire_count = 0
                     consecutive_clear_count += 1
@@ -514,7 +535,12 @@ def camera_loop(
                     "[%s] FIRE DETECTED! frame=%d  confidence=%.2f",
                     entry.name, idx, result.confidence,
                 )
-                snapshot_frame = _snapshot_frame_for_incident(entry, detection_frame, result)
+                snapshot_frame = _snapshot_frame_for_incident(
+                    entry,
+                    detection_frame,
+                    result,
+                    demo_video_shortcuts_enabled,
+                )
                 notifier.send_incident(entry.camera_id, snapshot_frame, result.confidence)
 
         except Exception as exc:
@@ -523,7 +549,11 @@ def camera_loop(
             reader.release()
 
         # Stream dropped; wait briefly and reconnect.
-        delay = 0.5 if _is_lobby_demo_camera(entry) else _RETRY_DELAYS[min(retry_idx, len(_RETRY_DELAYS) - 1)]
+        delay = (
+            0.5
+            if demo_video_shortcuts_enabled and _is_lobby_demo_camera(entry)
+            else _RETRY_DELAYS[min(retry_idx, len(_RETRY_DELAYS) - 1)]
+        )
         logger.info("[%s] Reconnecting in %.1fs...", entry.name, delay)
         retry_idx = min(retry_idx + 1, len(_RETRY_DELAYS) - 1)
         time.sleep(delay)
@@ -559,6 +589,11 @@ def main() -> None:
         )
         logger.info("Mock (HSV) detector kullanılıyor.")
 
+    if settings.demo_video_shortcuts_enabled:
+        logger.warning("Legacy demo video shortcuts are ENABLED.")
+    else:
+        logger.info("Legacy demo video shortcuts disabled; detection uses the full frame.")
+
     notifier = BackendNotifier(settings=settings)
 
     # ── Thread factory ─────────────────────────────────────────
@@ -571,6 +606,7 @@ def main() -> None:
                 settings.detection_consecutive_frames,
                 detector,
                 notifier,
+                settings.demo_video_shortcuts_enabled,
             ),
             name=f"camera-{entry.camera_id}",
             daemon=True,

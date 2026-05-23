@@ -1,7 +1,7 @@
 # Flame Scope - RTSP stream launcher
 #
 # Usage:
-#   powershell -ExecutionPolicy Bypass -File .\start_rtsp.ps1 -RtspPort 8555 -HlsPort 8888
+#   powershell -ExecutionPolicy Bypass -File .\start_rtsp.ps1 -RtspPort 8554 -HlsPort 8888
 
 param(
     [int]$WebcamIndex = 0,

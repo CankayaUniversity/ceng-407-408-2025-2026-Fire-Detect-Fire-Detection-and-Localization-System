@@ -21,7 +21,7 @@ class _CameraListScreenState extends State<CameraListScreen> {
   bool _loading = true;
   String? _error;
 
-  String _streamUrlForIp(String ip) => 'rtsp://$ip:8555/webcam';
+  String _streamUrlForIp(String ip) => 'rtsp://$ip:8554/webcam';
 
   String _cameraIpFromStreamUrl(String? url) {
     if (url == null || url.trim().isEmpty) return '';
@@ -260,7 +260,7 @@ class _CameraListScreenState extends State<CameraListScreen> {
   // Stream source update dialog
   Future<void> _showEditRtspDialog(CameraModel cam) async {
     final rtspCtrl = TextEditingController(
-        text: cam.rtspUrl ?? 'rtsp://192.168.1.35:8555/webcam');
+        text: cam.rtspUrl ?? 'rtsp://192.168.1.35:8554/webcam');
     String? validationMessage;
 
     final confirmed = await showDialog<bool>(
@@ -487,10 +487,11 @@ class _IpShortcutState extends State<_IpShortcut> {
         Expanded(
           child: TextField(
             controller: _ctrl,
-            keyboardType: TextInputType.number,
+            keyboardType: TextInputType.url,
             decoration: const InputDecoration(
               labelText: 'Camera IP',
-              hintText: '192.168.1.X',
+              hintText: '192.168.1.29',
+              helperText: 'Use dots between IP parts.',
               isDense: true,
               border: OutlineInputBorder(),
               prefixIcon: Icon(Icons.wifi, size: 18),

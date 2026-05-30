@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
+import 'package:flamescope/core/constants/api_constants.dart';
+
 String rtspToHls(String rtspUrl) {
   try {
     final clean = rtspUrl.replaceAll('"', '').trim();
     final uri = Uri.parse(clean);
     final path = uri.path.isEmpty ? '/webcam' : uri.path;
-    return 'http://${uri.host}:8888$path/index.m3u8';
+    final host = kLanIp == '10.0.2.2' ? kLanIp : uri.host;
+    return 'http://$host:8888$path/index.m3u8';
   } catch (_) {
     return rtspUrl;
   }

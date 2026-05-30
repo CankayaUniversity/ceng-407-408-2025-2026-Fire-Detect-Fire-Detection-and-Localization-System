@@ -80,6 +80,7 @@ def _risk_score_from_fire_signal(
     largest_blob_ratio: float,
     min_flame_ratio: float,
     min_blob_ratio: float,
+    max_score: float = 0.95,
 ) -> float:
     """
     Camera-calibrated risk score for early warning channels.
@@ -91,7 +92,7 @@ def _risk_score_from_fire_signal(
     flame_strength = max(0.0, (flame_ratio - min_flame_ratio) / max(min_flame_ratio, 1e-6))
     blob_strength = max(0.0, (largest_blob_ratio - min_blob_ratio) / max(min_blob_ratio, 1e-6))
     score = 0.62 + min(0.16, flame_strength * 0.08) + min(0.20, blob_strength * 0.10)
-    return float(min(0.95, score))
+    return float(min(max_score, score))
 
 
 def _detect_calibrated_early_flame(entry: CameraEntry, frame) -> DetectionResult | None:
@@ -181,10 +182,10 @@ def _detect_webcam_small_flame(entry: CameraEntry, frame) -> DetectionResult | N
     if height <= 0 or width <= 0:
         return None
 
-    y1 = int(height * 0.62)
-    y2 = int(height * 0.98)
-    x1 = int(width * 0.50)
-    x2 = int(width * 0.98)
+    y1 = int(height * 0.48)
+    y2 = int(height * 0.88)
+    x1 = int(width * 0.34)
+    x2 = int(width * 0.82)
     roi = frame[y1:y2, x1:x2]
     if roi.size == 0:
         return None
@@ -231,10 +232,17 @@ def _detect_webcam_small_flame(entry: CameraEntry, frame) -> DetectionResult | N
         )
 
     blob_aspect = (bh / float(max(1, bw))) if largest_contour is not None else 0.0
-    min_flame_ratio = 0.003
-    min_blob_ratio = 0.0016
-    has_bright_core = core_ratio >= 0.0009 or core_in_blob_ratio >= 0.035
-    has_flame_shape = largest_contour is not None and bw <= width * 0.20 and bh <= height * 0.35 and blob_aspect >= 0.45
+    min_flame_ratio = 0.0045
+    min_blob_ratio = 0.0025
+    has_bright_core = core_ratio >= 0.006 or (
+        core_ratio >= 0.0025 and core_in_blob_ratio >= 0.12
+    )
+    has_flame_shape = (
+        largest_contour is not None
+        and 8 <= bw <= width * 0.12
+        and 18 <= bh <= height * 0.28
+        and 0.9 <= blob_aspect <= 8.0
+    )
     has_fire = (
         flame_ratio >= min_flame_ratio
         and largest_blob_ratio >= min_blob_ratio
@@ -249,14 +257,16 @@ def _detect_webcam_small_flame(entry: CameraEntry, frame) -> DetectionResult | N
         largest_blob_ratio,
         min_flame_ratio,
         min_blob_ratio,
+        max_score=0.79,
     )
     logger.info(
-        "[%s] Webcam kucuk alev kanali tetiklendi. flame_ratio=%.5f largest=%.5f core=%.5f blob_core=%.5f confidence=%.2f",
+        "[%s] Webcam kucuk alev kanali tetiklendi. flame_ratio=%.5f largest=%.5f core=%.5f blob_core=%.5f aspect=%.2f confidence=%.2f",
         entry.name,
         flame_ratio,
         largest_blob_ratio,
         core_ratio,
         core_in_blob_ratio,
+        blob_aspect,
         confidence,
     )
     return DetectionResult(True, confidence, flame_ratio, largest_blob_ratio, bbox)
@@ -404,10 +414,11 @@ def camera_loop(
     N consecutive fire frames -> send an incident to the backend -> apply cooldown.
     """
     effective_consecutive_required = consecutive_required
+    effective_cooldown_seconds = 120 if _is_webcam_demo_camera(entry) else cooldown_seconds
 
     logger.info(
         "Camera started: %s  source=%s  consecutive=%d  cooldown=%ds",
-        entry.name, entry.rtsp_url, effective_consecutive_required, cooldown_seconds,
+        entry.name, entry.rtsp_url, effective_consecutive_required, effective_cooldown_seconds,
     )
 
     retry_idx = 0
@@ -488,7 +499,11 @@ def camera_loop(
                     consecutive_fire_count, effective_consecutive_required,
                 )
 
-                if consecutive_fire_count < effective_consecutive_required:
+                required_frames = effective_consecutive_required
+                if _is_webcam_demo_camera(entry):
+                    required_frames = 1
+
+                if consecutive_fire_count < required_frames:
                     time.sleep(0.05)
                     continue
 
@@ -498,7 +513,7 @@ def camera_loop(
 
                 now = _utc_now()
                 next_allowed_at = (
-                    last_incident_at + timedelta(seconds=cooldown_seconds)
+                    last_incident_at + timedelta(seconds=effective_cooldown_seconds)
                     if last_incident_at else None
                 )
                 if next_allowed_at and now < next_allowed_at:

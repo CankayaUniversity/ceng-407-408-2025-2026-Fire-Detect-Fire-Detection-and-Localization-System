@@ -82,22 +82,41 @@ class _LiveStreamScreenState extends State<LiveStreamScreen> {
   }
 
   Future<void> _restartLobbyDemoStream() async {
-    final auth = context.read<AuthService>();
-    try {
-      await createDio(auth)
-          .post(ApiEndpoints.restartLobbyDemo(widget.cameraId));
-    } catch (_) {
-      // Demo restart is best-effort; the local YouTube preview can still play.
-    }
+    await _setLocalDemoStream('lobby', 'start');
   }
 
   Future<void> _restartOutdoorDemoStream() async {
-    final auth = context.read<AuthService>();
+    await _setLocalDemoStream('outdoor', 'start');
+  }
+
+  Future<void> _stopLobbyDemoStream() async {
+    await _setLocalDemoStream('lobby', 'stop');
+  }
+
+  Future<void> _stopOutdoorDemoStream() async {
+    await _setLocalDemoStream('outdoor', 'stop');
+  }
+
+  Future<void> _setLocalDemoStream(String streamName, String action) async {
+    final rtsp = _rtspUrl;
+    String? host;
+    if (rtsp != null && rtsp.isNotEmpty) {
+      host = Uri.tryParse(rtsp.replaceAll('"', '').trim())?.host;
+    }
+    host ??= kLocalStreamHost.trim().isEmpty ? null : kLocalStreamHost.trim();
+    if (host == null || host.isEmpty) return;
+
     try {
-      await createDio(auth)
-          .post(ApiEndpoints.restartOutdoorDemo(widget.cameraId));
+      await Dio().postUri(
+        Uri(
+          scheme: 'http',
+          host: host,
+          port: 8891,
+          path: '/$action/$streamName',
+        ),
+      );
     } catch (_) {
-      // Demo restart is best-effort; the local video preview can still play.
+      // Local RTSP control is best-effort; the preview video can still play.
     }
   }
 
@@ -142,6 +161,7 @@ class _LiveStreamScreenState extends State<LiveStreamScreen> {
                       cameraName: _camera?.name ?? '',
                       location: _camera?.location ?? '',
                       onRestartStream: _restartLobbyDemoStream,
+                      onStopStream: _stopLobbyDemoStream,
                       startAt: _lobbyDemoStartAt,
                       videoFileName: 'lobby_fire.mp4',
                     )
@@ -151,6 +171,7 @@ class _LiveStreamScreenState extends State<LiveStreamScreen> {
                           cameraName: _camera?.name ?? '',
                           location: _camera?.location ?? '',
                           onRestartStream: _restartOutdoorDemoStream,
+                          onStopStream: _stopOutdoorDemoStream,
                           startAt: _outdoorDemoStartAt,
                           videoFileName: 'outdoor_smoke.mp4',
                         )
@@ -174,6 +195,7 @@ class _LobbyDemoVideoView extends StatefulWidget {
     required this.cameraName,
     required this.location,
     required this.onRestartStream,
+    required this.onStopStream,
     required this.startAt,
     required this.videoFileName,
   });
@@ -181,6 +203,7 @@ class _LobbyDemoVideoView extends StatefulWidget {
   final String cameraName;
   final String location;
   final Future<void> Function() onRestartStream;
+  final Future<void> Function() onStopStream;
   final Duration startAt;
   final String videoFileName;
 
@@ -247,6 +270,7 @@ class _LobbyDemoVideoViewState extends State<_LobbyDemoVideoView> {
 
   @override
   void dispose() {
+    widget.onStopStream();
     _controller.dispose();
     super.dispose();
   }

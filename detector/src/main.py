@@ -47,6 +47,22 @@ def _is_outdoor_demo_camera(entry: CameraEntry) -> bool:
     return "outdoor" in name or "duman" in name
 
 
+def _is_on_demand_demo_camera(entry: CameraEntry) -> bool:
+    return _is_lobby_demo_camera(entry) or _is_outdoor_demo_camera(entry)
+
+
+def _connection_retry_delay(
+    entry: CameraEntry,
+    retry_idx: int,
+    demo_video_shortcuts_enabled: bool,
+) -> float:
+    if _is_on_demand_demo_camera(entry):
+        return 0.5
+    if demo_video_shortcuts_enabled and _is_lobby_demo_camera(entry):
+        return 0.5
+    return _RETRY_DELAYS[min(retry_idx, len(_RETRY_DELAYS) - 1)]
+
+
 def _lobby_demo_marker_mtime() -> float | None:
     marker_path = Path(__file__).resolve().parents[2] / "demo-videos" / "lobby_fire.restart"
     try:
@@ -448,16 +464,14 @@ def camera_loop(
         consecutive_fire_count = 0
         consecutive_clear_count = clear_frames_required
         armed = True
+        is_on_demand_demo_camera = _is_on_demand_demo_camera(entry)
+        sent_incident_this_connection = False
 
         # ── Bağlan ────────────────────────────────────────────────
         try:
             reader = StreamReader(entry.rtsp_url)
         except RuntimeError as exc:
-            delay = (
-                0.5
-                if demo_video_shortcuts_enabled and _is_lobby_demo_camera(entry)
-                else _RETRY_DELAYS[min(retry_idx, len(_RETRY_DELAYS) - 1)]
-            )
+            delay = _connection_retry_delay(entry, retry_idx, demo_video_shortcuts_enabled)
             logger.warning(
                 "Camera could not be opened [%s]: %s; retrying in %.1fs",
                 entry.name, exc, delay,
@@ -480,6 +494,12 @@ def camera_loop(
                 detection_frame = _frame_for_detection(entry, frame)
                 result = detector.detect(detection_frame)
 
+                if _is_webcam_demo_camera(entry):
+                    result = (
+                        _detect_webcam_small_flame(entry, detection_frame)
+                        or DetectionResult(False, 0.0, 0.0, 0.0)
+                    )
+
                 if demo_video_shortcuts_enabled:
                     calibrated_result = _detect_calibrated_early_flame(entry, detection_frame)
                     if calibrated_result and calibrated_result.has_fire:
@@ -495,7 +515,11 @@ def camera_loop(
                 if not result.has_fire:
                     consecutive_fire_count = 0
                     consecutive_clear_count += 1
-                    if not armed and consecutive_clear_count >= clear_frames_required:
+                    if (
+                        not armed
+                        and consecutive_clear_count >= clear_frames_required
+                        and not (is_on_demand_demo_camera and sent_incident_this_connection)
+                    ):
                         armed = True
                         logger.debug("[%s] Detector re-armed.", entry.name)
                     time.sleep(0.05)
@@ -517,6 +541,10 @@ def camera_loop(
                     time.sleep(0.05)
                     continue
 
+                if is_on_demand_demo_camera and sent_incident_this_connection:
+                    time.sleep(0.05)
+                    continue
+
                 now = _utc_now()
                 next_allowed_at = (
                     last_incident_at + timedelta(seconds=cooldown_seconds)
@@ -529,6 +557,7 @@ def camera_loop(
                     continue
 
                 last_incident_at = now
+                sent_incident_this_connection = True
                 consecutive_fire_count = 0
                 armed = False
                 logger.info(
@@ -549,11 +578,7 @@ def camera_loop(
             reader.release()
 
         # Stream dropped; wait briefly and reconnect.
-        delay = (
-            0.5
-            if demo_video_shortcuts_enabled and _is_lobby_demo_camera(entry)
-            else _RETRY_DELAYS[min(retry_idx, len(_RETRY_DELAYS) - 1)]
-        )
+        delay = _connection_retry_delay(entry, retry_idx, demo_video_shortcuts_enabled)
         logger.info("[%s] Reconnecting in %.1fs...", entry.name, delay)
         retry_idx = min(retry_idx + 1, len(_RETRY_DELAYS) - 1)
         time.sleep(delay)

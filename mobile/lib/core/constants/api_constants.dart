@@ -14,6 +14,13 @@ const String _apiBaseUrlOverride = String.fromEnvironment(
   defaultValue: '',
 );
 
+/// Local machine that runs the demo RTSP stream controller.
+/// Useful when backend hides rtsp_url for a role before an incident exists.
+const String kLocalStreamHost = String.fromEnvironment(
+  'FLAMESCOPE_LOCAL_STREAM_HOST',
+  defaultValue: '',
+);
+
 String _trimTrailingSlash(String value) {
   var result = value.trim();
   while (result.endsWith('/')) {

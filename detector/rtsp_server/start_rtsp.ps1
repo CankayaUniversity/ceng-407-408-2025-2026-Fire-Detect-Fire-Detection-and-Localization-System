@@ -51,6 +51,10 @@ writeQueueSize: 512
 paths:
   webcam:
     source: publisher
+  lobby:
+    source: publisher
+  outdoor:
+    source: publisher
 "@
 $configContent | Out-File -FilePath $mediamtxCfg -Encoding UTF8
 

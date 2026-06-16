@@ -32,7 +32,8 @@ class _LoginScreenState extends State<LoginScreen> {
       _loading = true;
     });
     final auth = context.read<AuthService>();
-    final ok = await auth.login(_emailController.text.trim(), _passwordController.text);
+    final ok = await auth.login(
+        _emailController.text.trim(), _passwordController.text);
     if (!mounted) return;
     setState(() => _loading = false);
     if (ok) {
@@ -53,7 +54,7 @@ class _LoginScreenState extends State<LoginScreen> {
           context.go(AppRouter.employeeHome);
       }
     } else {
-      setState(() => _error = 'E-posta veya şifre hatalı');
+      setState(() => _error = 'Invalid email or password');
     }
   }
 
@@ -69,46 +70,102 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.local_fire_department, size: 64, color: Colors.orange),
-                  const SizedBox(height: 8),
-                  const Text('Flame Scope', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                  Container(
+                    width: 86,
+                    height: 86,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(24),
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF7A1F12), Color(0xFFFF6D00)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color:
+                              const Color(0xFFFF6D00).withValues(alpha: 0.28),
+                          blurRadius: 24,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.local_fire_department,
+                      size: 52,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  const Text(
+                    'FlameScope',
+                    style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Early fire and smoke monitoring',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.brown.shade600,
+                        ),
+                  ),
                   const SizedBox(height: 32),
                   TextFormField(
                     controller: _emailController,
                     decoration: const InputDecoration(
-                      labelText: 'E-posta',
+                      labelText: 'Email',
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.email_outlined),
+                      filled: true,
+                      fillColor: Colors.white,
                     ),
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
-                    validator: (v) => v == null || v.isEmpty ? 'E-posta girin' : null,
+                    validator: (v) =>
+                        v == null || v.isEmpty ? 'Email girin' : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _passwordController,
                     decoration: const InputDecoration(
-                      labelText: 'Şifre',
+                      labelText: 'Password',
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.lock_outline),
+                      filled: true,
+                      fillColor: Colors.white,
                     ),
                     obscureText: true,
                     textInputAction: TextInputAction.done,
                     onFieldSubmitted: (_) => _login(),
-                    validator: (v) => v == null || v.isEmpty ? 'Şifre girin' : null,
+                    validator: (v) =>
+                        v == null || v.isEmpty ? 'Enter a password' : null,
                   ),
                   if (_error != null) ...[
                     const SizedBox(height: 12),
                     Text(_error!, style: const TextStyle(color: Colors.red)),
                   ],
                   const SizedBox(height: 24),
-                  FilledButton(
-                    onPressed: _loading ? null : () {
-                      if (_formKey.currentState?.validate() ?? false) _login();
-                    },
-                    child: _loading
-                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Text('Giriş Yap'),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: FilledButton.icon(
+                      onPressed: _loading
+                          ? null
+                          : () {
+                              if (_formKey.currentState?.validate() ?? false) {
+                                _login();
+                              }
+                            },
+                      icon: _loading
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.login),
+                      label: const Text('Sign In'),
+                    ),
                   ),
                 ],
               ),

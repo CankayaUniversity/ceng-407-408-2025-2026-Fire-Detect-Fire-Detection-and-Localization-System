@@ -7,7 +7,8 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import get_settings
 from app.database.session import init_db
-from app.routers import auth, me, cameras, incidents, users, ws
+from app.routers import auth, me, cameras, incidents, users, ws, notifications, snapshots
+from app.core.firebase import init_firebase
 
 settings = get_settings()
 
@@ -15,6 +16,7 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    init_firebase()
     yield
     # shutdown if needed
 
@@ -37,13 +39,19 @@ app.include_router(me.router)
 app.include_router(users.router)
 app.include_router(cameras.router)
 app.include_router(incidents.router)
+app.include_router(snapshots.router)
 app.include_router(ws.router)
+app.include_router(notifications.router)
 
 # Snapshot dosyalarını statik olarak sun
 # Backend: backend/, snapshot'lar: ../snapshots/ (proje kökü)
 _SNAPSHOT_DIR = Path(__file__).resolve().parent.parent.parent / "snapshots"
 _SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/snapshots", StaticFiles(directory=str(_SNAPSHOT_DIR)), name="snapshots")
+
+_DEMO_VIDEO_DIR = Path(__file__).resolve().parent.parent.parent / "demo-videos"
+if _DEMO_VIDEO_DIR.exists():
+    app.mount("/demo-videos", StaticFiles(directory=str(_DEMO_VIDEO_DIR)), name="demo-videos")
 
 
 @app.get("/health")

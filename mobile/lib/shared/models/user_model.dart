@@ -24,7 +24,9 @@ class UserModel {
       email: json['email'] as String? ?? '',
       role: AppRole.fromString(json['role'] as String?),
       isActive: json['is_active'] as bool? ?? true,
-      createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at'] as String) : null,
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'] as String)
+          : null,
     );
   }
 }

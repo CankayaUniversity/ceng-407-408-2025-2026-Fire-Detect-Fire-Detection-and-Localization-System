@@ -22,6 +22,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[Role] = mapped_column(Enum(Role), nullable=False, default=Role.EMPLOYEE)
+    fcm_token: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 

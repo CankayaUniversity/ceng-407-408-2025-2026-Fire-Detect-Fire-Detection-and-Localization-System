@@ -53,7 +53,8 @@ class _SplashScreenState extends State<SplashScreen> {
           children: [
             Icon(Icons.local_fire_department, size: 80, color: Colors.orange),
             SizedBox(height: 24),
-            Text('Flame Scope', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            Text('Flame Scope',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             SizedBox(height: 16),
             CircularProgressIndicator(),
           ],

@@ -27,6 +27,8 @@ class Settings(BaseSettings):
 
     # Where to POST incidents
     incidents_detected_path: str = "/incidents/detected"
+    snapshot_upload_path: str = "/snapshots/upload"
+    snapshot_upload_timeout_seconds: int = 15
 
     # Snapshots
     snapshot_dir: str = "../snapshots"
@@ -45,6 +47,10 @@ class Settings(BaseSettings):
     # Detector implementation: "mock" (HSV heuristic), "cnn", or "yolo"
     detector_mode: str = "mock"
 
+    # Legacy demo shortcuts are disabled by default so every camera uses the
+    # selected detector over the full frame.
+    demo_video_shortcuts_enabled: bool = False
+
     # CNN model path (relative to detector/ dir or absolute)
     # Set via env: CNN_MODEL_PATH=training/fire_model.pt
     cnn_model_path: str | None = None
@@ -61,6 +67,11 @@ class Settings(BaseSettings):
 
     # YOLO input image size used during inference
     yolo_imgsz: int = 512
+
+    # YOLO CPU inference batching. Camera threads enqueue frames; one worker
+    # briefly collects requests and runs them together.
+    yolo_batch_size: int = 4
+    yolo_batch_wait_ms: int = 20
 
     # Detection tuning (reduce false alarms)
     detection_fire_ratio_threshold: float = 0.005  # min ratio of fire-like pixels to total

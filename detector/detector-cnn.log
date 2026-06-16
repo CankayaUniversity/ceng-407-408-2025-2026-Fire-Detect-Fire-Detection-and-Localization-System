@@ -1,0 +1,206 @@
+0.9%1.8%2.8%3.7%4.6%5.5%6.4%7.4%8.3%9.2%10.1%11.0%12.0%12.9%13.8%14.7%15.6%16.5%17.5%18.4%19.3%20.2%21.1%22.1%23.0%23.9%24.8%25.7%26.7%27.6%28.5%29.4%30.3%31.3%32.2%33.1%34.0%34.9%35.9%36.8%37.7%38.6%39.5%40.4%41.4%42.3%43.2%44.1%45.0%46.0%46.9%47.8%48.7%49.6%50.6%51.5%52.4%53.3%54.2%55.2%56.1%57.0%57.9%58.8%59.8%60.7%61.6%62.5%63.4%64.3%65.3%66.2%67.1%68.0%68.9%69.9%70.8%71.7%72.6%73.5%74.5%75.4%76.3%77.2%78.1%79.1%80.0%80.9%81.8%82.7%83.7%84.6%85.5%86.4%87.3%88.2%89.2%90.1%91.0%91.9%92.8%93.8%94.7%95.6%96.5%97.4%98.4%99.3%100.0%
+2026-04-02 17:27:04,636 [INFO] src.cnn_detector - CNN detector: loaded weights from training\fire_model.pt
+2026-04-02 17:27:04,650 [INFO] src.cnn_detector - CNN detector ready. threshold=0.34
+2026-04-02 17:27:04,651 [INFO] flamescope.detector - CNN detector yüklendi. model=training/fire_model.pt
+2026-04-02 17:27:04,651 [INFO] flamescope.detector - Detector servisi ba\u015flat\u0131ld\u0131. Backend: http://localhost:8000  Mod: cnn
+2026-04-02 17:27:04,651 [INFO] flamescope.detector - Backend'deki kameralar her 30 saniyede otomatik yüklenir.
+2026-04-02 17:27:04,651 [INFO] src.camera_manager - CameraManager ba\u015flat\u0131ld\u0131 (poll=30s)
+2026-04-02 17:27:06,700 [INFO] flamescope.detector - Kamera ba\u015flat\u0131ld\u0131: Lobby Kamera  source=rtsp://192.168.1.100:554/stream1  consecutive=3  cooldown=30s
+2026-04-02 17:27:06,708 [INFO] src.camera_manager - Kamera thread ba\u015flat\u0131ld\u0131: Camera(id=1, name='Lobby Kamera', rtsp='rtsp://192.168.1.100:554/stream1')
+2026-04-02 17:27:06,712 [INFO] flamescope.detector - Kamera ba\u015flat\u0131ld\u0131: Depo Kamera  source=rtsp://192.168.1.101:554/stream1  consecutive=3  cooldown=30s
+2026-04-02 17:27:06,712 [INFO] src.camera_manager - Kamera thread ba\u015flat\u0131ld\u0131: Camera(id=2, name='Depo Kamera', rtsp='rtsp://192.168.1.101:554/stream1')
+2026-04-02 17:27:06,712 [INFO] flamescope.detector - Kamera ba\u015flat\u0131ld\u0131: efe  source=rtsp://192.168.1.26:8554/stream  consecutive=3  cooldown=30s
+2026-04-02 17:27:06,712 [INFO] src.camera_manager - Kamera thread ba\u015flat\u0131ld\u0131: Camera(id=3, name='efe', rtsp='rtsp://192.168.1.26:8554/stream')
+[ WARN:0@30.101] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30100.686000 ms
+[ WARN:1@60.163] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30057.172000 ms
+[ WARN:2@90.228] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30064.872000 ms
+2026-04-02 17:28:37,411 [INFO] flamescope.detector - Kamera ba\u011fland\u0131: efe
+2026-04-02 17:28:38,226 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 5s sonra tekrar denenecek
+2026-04-02 17:28:58,248 [INFO] flamescope.detector - [efe] YANGIN TESP\u0130T ED\u0130LD\u0130! frame=215  confidence=1.00
+2026-04-02 17:29:00,346 [INFO] src.notifier - Incident sent for camera_id=3 (confidence=1.00, snapshot=..\snapshots\camera_3_20260402T142858Z.jpg)
+2026-04-02 17:29:08,110 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 5s sonra tekrar denenecek
+[ WARN:0@126.525] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30008.810000 ms
+[ WARN:1@156.534] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30009.544000 ms
+2026-04-02 17:30:14,450 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 10s sonra tekrar denenecek
+2026-04-02 17:30:44,424 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 10s sonra tekrar denenecek
+2026-04-02 17:30:51,084 [INFO] flamescope.detector - [efe] YANGIN TESP\u0130T ED\u0130LD\u0130! frame=1765  confidence=1.00
+2026-04-02 17:30:53,210 [INFO] src.notifier - Incident sent for camera_id=3 (confidence=1.00, snapshot=..\snapshots\camera_3_20260402T143051Z.jpg)
+[ WARN:0@227.805] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30065.508000 ms
+[ WARN:1@257.807] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30001.939000 ms
+2026-04-02 17:31:55,693 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 20s sonra tekrar denenecek
+2026-04-02 17:32:25,707 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 20s sonra tekrar denenecek
+[ WARN:0@339.082] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30099.229000 ms
+[ WARN:1@369.145] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30062.613000 ms
+2026-04-02 17:33:46,992 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 30s sonra tekrar denenecek
+2026-04-02 17:34:17,063 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 30s sonra tekrar denenecek
+[ WARN:0@460.337] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30055.141000 ms
+[ WARN:1@490.372] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30019.239000 ms
+2026-04-02 17:35:48,227 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 17:36:18,266 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@611.605] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30088.408000 ms
+[ WARN:1@641.654] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30049.086000 ms
+2026-04-02 17:38:19,528 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 17:38:49,554 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 17:39:36,475 [INFO] flamescope.detector - [efe] YANGIN TESP\u0130T ED\u0130LD\u0130! frame=9411  confidence=0.91
+2026-04-02 17:39:38,599 [INFO] src.notifier - Incident sent for camera_id=3 (confidence=0.91, snapshot=..\snapshots\camera_3_20260402T143936Z.jpg)
+[ WARN:0@762.916] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30098.943000 ms
+[ WARN:1@792.990] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30074.188000 ms
+2026-04-02 17:40:50,839 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 17:41:20,913 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@914.181] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30052.383000 ms
+[ WARN:1@944.300] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30097.707000 ms
+2026-04-02 17:43:22,063 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 17:43:52,183 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@1065.416] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30064.428000 ms
+[ WARN:1@1095.557] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30084.654000 ms
+2026-04-02 17:45:53,335 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 17:46:23,470 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@1216.708] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30083.605000 ms
+[ WARN:1@1246.866] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30107.082000 ms
+2026-04-02 17:48:24,638 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 17:48:54,760 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@1368.024] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30097.571000 ms
+[ WARN:1@1398.139] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30089.942000 ms
+2026-04-02 17:50:55,936 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 17:51:26,024 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@1519.289] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30063.611000 ms
+[ WARN:1@1549.365] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30052.180000 ms
+2026-04-02 17:53:27,209 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 17:53:57,286 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@1670.578] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30080.080000 ms
+[ WARN:1@1700.639] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30061.065000 ms
+2026-04-02 17:55:58,473 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 17:56:28,555 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@1821.766] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30003.998000 ms
+[ WARN:1@1851.936] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30091.138000 ms
+2026-04-02 17:58:29,696 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 17:58:59,838 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@1973.075] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30090.644000 ms
+[ WARN:1@2003.131] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30003.629000 ms
+2026-04-02 18:01:00,976 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 18:01:31,031 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@2124.332] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30066.373000 ms
+[ WARN:1@2154.420] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30087.270000 ms
+2026-04-02 18:03:32,235 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 18:04:02,324 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@2275.605] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30080.437000 ms
+[ WARN:1@2305.698] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30084.633000 ms
+2026-04-02 18:06:03,516 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 18:06:33,581 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@2426.906] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30101.334000 ms
+[ WARN:1@2456.953] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30046.466000 ms
+2026-04-02 18:08:34,815 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 18:09:04,837 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@2578.113] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30008.714000 ms
+[ WARN:1@2608.164] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30037.994000 ms
+2026-04-02 18:11:06,009 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 18:11:36,101 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@3306.324] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 607026.418000 ms
+[ WARN:1@3336.465] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30099.457000 ms
+2026-04-02 18:23:14,368 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 18:23:44,380 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@3457.679] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30022.213000 ms
+[ WARN:1@3487.731] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30052.579000 ms
+2026-04-02 18:25:45,623 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 18:26:15,629 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@3608.971] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30058.212000 ms
+[ WARN:1@3639.009] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30037.463000 ms
+2026-04-02 18:28:16,898 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 18:28:46,917 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@3760.189] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30001.649000 ms
+[ WARN:1@3790.268] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30061.612000 ms
+2026-04-02 18:30:48,074 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 18:31:18,212 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@3911.392] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30020.788000 ms
+[ WARN:1@3941.549] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30046.792000 ms
+2026-04-02 18:33:19,323 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 18:33:49,465 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@4062.689] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30075.211000 ms
+[ WARN:1@4092.833] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30078.105000 ms
+2026-04-02 18:35:50,563 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 18:36:20,740 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@4213.901] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30048.478000 ms
+[ WARN:1@4244.032] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30002.221000 ms
+2026-04-02 18:38:21,857 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 18:38:51,966 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@4365.248] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30101.763000 ms
+[ WARN:1@4395.345] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30087.869000 ms
+2026-04-02 18:40:53,180 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 18:41:23,273 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@4516.539] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30061.242000 ms
+[ WARN:1@4546.614] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30052.011000 ms
+2026-04-02 18:43:24,488 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 18:43:54,600 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@4667.802] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30024.990000 ms
+[ WARN:1@4697.954] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30063.431000 ms
+2026-04-02 18:45:55,748 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 18:46:25,899 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@4819.061] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30024.453000 ms
+[ WARN:1@4849.279] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30090.819000 ms
+2026-04-02 18:48:26,968 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 18:48:57,174 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@4970.334] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30077.186000 ms
+[ WARN:1@5000.558] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30093.991000 ms
+2026-04-02 18:50:58,218 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 18:51:28,421 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@5121.593] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30085.379000 ms
+[ WARN:1@5151.771] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30061.965000 ms
+2026-04-02 18:53:29,423 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 18:53:59,638 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@5272.794] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30081.928000 ms
+[ WARN:1@5302.966] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30038.078000 ms
+2026-04-02 18:56:00,700 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 18:56:30,840 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@5424.064] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30074.696000 ms
+[ WARN:1@5454.195] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30064.394000 ms
+2026-04-02 18:58:32,036 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 18:59:02,152 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@5575.401] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30075.620000 ms
+[ WARN:1@5605.454] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30012.421000 ms
+2026-04-02 19:01:03,346 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 19:01:33,385 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@5726.691] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30053.522000 ms
+[ WARN:1@5756.757] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30065.716000 ms
+2026-04-02 19:03:34,683 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 19:04:04,708 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@5878.071] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30097.610000 ms
+[ WARN:1@5908.149] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30077.638000 ms
+2026-04-02 19:06:06,004 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 19:06:36,091 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@6029.389] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30096.341000 ms
+[ WARN:1@6059.442] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30052.035000 ms
+2026-04-02 19:08:37,315 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 19:09:07,351 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@6180.700] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30096.131000 ms
+[ WARN:1@6210.760] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30059.847000 ms
+2026-04-02 19:11:08,638 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 19:11:38,724 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@6332.014] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30086.384000 ms
+[ WARN:1@6362.094] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30079.252000 ms
+2026-04-02 19:13:39,911 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 19:14:10,017 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@6483.283] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30082.599000 ms
+[ WARN:1@6513.346] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30039.933000 ms
+2026-04-02 19:16:11,203 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 19:16:41,275 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@7001.887] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 397386.822000 ms
+[ WARN:1@7044.362] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30074.966000 ms
+2026-04-02 19:24:54,253 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 19:25:32,200 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@7157.652] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30110.836000 ms
+[ WARN:1@7195.524] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30035.375000 ms
+2026-04-02 19:27:25,495 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 19:28:03,392 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@7308.832] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30047.914000 ms
+[ WARN:1@7346.784] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30103.600000 ms
+2026-04-02 19:29:56,709 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 19:30:34,644 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@7460.078] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30073.829000 ms
+[ WARN:1@7497.968] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30034.235000 ms
+2026-04-02 19:32:27,923 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 19:33:05,778 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@7611.213] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30001.146000 ms
+[ WARN:1@7649.098] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30022.385000 ms
+2026-04-02 19:34:59,033 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Lobby Kamera]: Cannot open video source: rtsp://192.168.1.100:554/stream1 — 60s sonra tekrar denenecek
+2026-04-02 19:35:36,939 [WARNING] flamescope.detector - Kamera aç\u0131lamad\u0131 [Depo Kamera]: Cannot open video source: rtsp://192.168.1.101:554/stream1 — 60s sonra tekrar denenecek
+[ WARN:0@7762.413] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30087.842000 ms

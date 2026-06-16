@@ -16,8 +16,15 @@ class CameraService:
         return list(result.unique().scalars().all())
 
     @staticmethod
-    async def get_by_id(db: AsyncSession, camera_id: int) -> Camera | None:
-        result = await db.execute(select(Camera).where(Camera.id == camera_id))
+    async def get_by_id(
+        db: AsyncSession,
+        camera_id: int,
+        load_incidents: bool = False,
+    ) -> Camera | None:
+        q = select(Camera).where(Camera.id == camera_id)
+        if load_incidents:
+            q = q.options(selectinload(Camera.incidents))
+        result = await db.execute(q)
         return result.scalar_one_or_none()
 
     @staticmethod

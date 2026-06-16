@@ -1,13 +1,140 @@
+from pathlib import Path
+import subprocess
+
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.session import get_db
 from app.auth.dependencies import get_current_user, require_roles, verify_detector_api_key
+from app.models.camera import Camera
+from app.models.incident import Incident
+from app.models.incident_update import IncidentResponseUpdate, IncidentSafetyReport
+from app.models.notification import Notification
 from app.models.user import User, Role
 from app.schemas.camera import CameraCreate, CameraUpdate, CameraResponse, CameraListResponse
 from app.services.camera_service import CameraService
 
 router = APIRouter(prefix="/cameras", tags=["cameras"])
+
+
+def _restart_lobby_demo_stream() -> dict[str, str]:
+    project_root = Path(__file__).resolve().parents[3]
+    video_path = project_root / "demo-videos" / "lobby_fire.mp4"
+    ffmpeg_exe = Path.home() / "flamescope-rtsp" / "ffmpeg" / "bin" / "ffmpeg.exe"
+    stdout_log = project_root / "detector" / "lobby_video_rtsp.log"
+    stderr_log = project_root / "detector" / "lobby_video_rtsp.err.log"
+    marker_path = project_root / "demo-videos" / "lobby_fire.restart"
+
+    if not video_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lobby demo video not found: {video_path}",
+        )
+    if not ffmpeg_exe.exists():
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"FFmpeg not found: {ffmpeg_exe}",
+        )
+
+    stopped_by_pid = False
+    try:
+        previous_pid = marker_path.read_text(encoding="utf-8").strip()
+        if previous_pid.isdigit():
+            result = subprocess.run(
+                ["taskkill", "/PID", previous_pid, "/F"],
+                check=False,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=2,
+            )
+            stopped_by_pid = result.returncode == 0
+    except (OSError, subprocess.TimeoutExpired):
+        stopped_by_pid = False
+
+    if not stopped_by_pid:
+        stop_command = (
+            "Get-CimInstance Win32_Process -Filter \"name = 'ffmpeg.exe'\" | "
+            "Where-Object { $_.CommandLine -like '*lobby_fire.mp4*' } | "
+            "ForEach-Object { Stop-Process -Id $_.ProcessId -Force }"
+        )
+        subprocess.run(
+            ["powershell", "-NoProfile", "-Command", stop_command],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=3,
+        )
+
+    args = [
+        str(ffmpeg_exe),
+        "-hide_banner",
+        "-loglevel",
+        "warning",
+        "-re",
+        "-ss",
+        "9",
+        "-stream_loop",
+        "-1",
+        "-i",
+        str(video_path),
+        "-an",
+        "-vf",
+        "scale=1280:720",
+        "-vcodec",
+        "libx264",
+        "-preset",
+        "ultrafast",
+        "-tune",
+        "zerolatency",
+        "-g",
+        "15",
+        "-bf",
+        "0",
+        "-x264-params",
+        "keyint=15:min-keyint=15:scenecut=0",
+        "-pix_fmt",
+        "yuv420p",
+        "-f",
+        "rtsp",
+        "-rtsp_transport",
+        "tcp",
+        "rtsp://localhost:8555/lobby",
+    ]
+    creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    with stdout_log.open("ab") as stdout, stderr_log.open("ab") as stderr:
+        process = subprocess.Popen(
+            args,
+            stdout=stdout,
+            stderr=stderr,
+            creationflags=creationflags,
+        )
+
+    marker_path.write_text(
+        str(process.pid),
+        encoding="utf-8",
+    )
+
+    return {"status": "restarted", "pid": str(process.pid)}
+
+
+def _restart_outdoor_demo_stream() -> dict[str, str]:
+    project_root = Path(__file__).resolve().parents[3]
+    video_path = project_root / "demo-videos" / "outdoor_smoke.mp4"
+    marker_path = project_root / "demo-videos" / "outdoor_smoke.restart"
+
+    if not video_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Outdoor demo video not found: {video_path}",
+        )
+
+    marker_path.write_text(
+        str(__import__("time").time()),
+        encoding="utf-8",
+    )
+
+    return {"status": "restarted"}
 
 
 @router.get("/detector-list")
@@ -16,16 +143,16 @@ async def list_cameras_for_detector(
     _ok: None = Depends(verify_detector_api_key),
 ):
     """
-    Detector servisinin kamera listesini çekmesi için endpoint.
-    JWT gerektirmez — detector API key ile (ya da key yoksa herkese açık).
-    Döner: [{"id": 1, "name": "...", "rtsp_url": "rtsp://..."}]
+    Endpoint used by the detector service to fetch cameras.
+    Does not require JWT; protected by detector API key when configured.
+    Returns: [{"id": 1, "name": "...", "rtsp_url": "rtsp://..."}]
     """
     cameras = await CameraService.list_cameras(db)
     return {
         "cameras": [
             {"id": c.id, "name": c.name, "location": c.location, "rtsp_url": c.rtsp_url}
             for c in cameras
-            if c.rtsp_url  # sadece RTSP URL'i olanları ver
+            if c.rtsp_url
         ]
     }
 
@@ -58,16 +185,56 @@ async def get_camera(
     current_user: User = Depends(require_roles(Role.ADMIN, Role.MANAGER)),
     db: AsyncSession = Depends(get_db),
 ):
-    camera = await CameraService.get_by_id(db, camera_id)
+    camera = await CameraService.get_by_id(
+        db,
+        camera_id,
+        load_incidents=current_user.role == Role.MANAGER,
+    )
     if not camera:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Camera not found")
+    show_stream = CameraService.can_see_stream(current_user.role, camera)
     return CameraResponse(
         id=camera.id,
         name=camera.name,
         location=camera.location,
-        rtsp_url=camera.rtsp_url,
+        rtsp_url=camera.rtsp_url if show_stream else None,
         created_at=camera.created_at,
     )
+
+
+@router.post("/{camera_id}/demo/restart-lobby")
+async def restart_lobby_demo_stream(
+    camera_id: int,
+    current_user: User = Depends(require_roles(Role.ADMIN, Role.MANAGER)),
+    db: AsyncSession = Depends(get_db),
+):
+    camera = await CameraService.get_by_id(db, camera_id)
+    if not camera:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Camera not found")
+    if "lobby" not in (camera.name or "").lower():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Demo restart is only available for Lobby Camera",
+        )
+    return _restart_lobby_demo_stream()
+
+
+@router.post("/{camera_id}/demo/restart-outdoor")
+async def restart_outdoor_demo_stream(
+    camera_id: int,
+    current_user: User = Depends(require_roles(Role.ADMIN, Role.MANAGER)),
+    db: AsyncSession = Depends(get_db),
+):
+    camera = await CameraService.get_by_id(db, camera_id)
+    if not camera:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Camera not found")
+    camera_name = (camera.name or "").lower()
+    if "outdoor" not in camera_name and "duman" not in camera_name:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Demo restart is only available for Outdoor Smoke Camera",
+        )
+    return _restart_outdoor_demo_stream()
 
 
 @router.patch("/{camera_id}", response_model=CameraResponse)
@@ -113,3 +280,39 @@ async def create_camera(
         rtsp_url=camera.rtsp_url,
         created_at=camera.created_at,
     )
+
+
+@router.delete("/{camera_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_camera(
+    camera_id: int,
+    current_user: User = Depends(require_roles(Role.ADMIN)),
+    db: AsyncSession = Depends(get_db),
+):
+    camera = await CameraService.get_by_id(db, camera_id)
+    if not camera:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Camera not found")
+
+    incident_ids_result = await db.execute(
+        select(Incident.id).where(Incident.camera_id == camera_id)
+    )
+    incident_ids = list(incident_ids_result.scalars().all())
+
+    if incident_ids:
+        await db.execute(
+            delete(IncidentSafetyReport).where(
+                IncidentSafetyReport.incident_id.in_(incident_ids)
+            )
+        )
+        await db.execute(
+            delete(IncidentResponseUpdate).where(
+                IncidentResponseUpdate.incident_id.in_(incident_ids)
+            )
+        )
+        await db.execute(
+            delete(Notification).where(Notification.incident_id.in_(incident_ids))
+        )
+        await db.execute(delete(Incident).where(Incident.id.in_(incident_ids)))
+
+    await db.execute(delete(Camera).where(Camera.id == camera_id))
+    await db.commit()
+    return None

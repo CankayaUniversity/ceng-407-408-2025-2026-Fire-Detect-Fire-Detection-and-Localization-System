@@ -34,16 +34,23 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
     final dio = createDio(auth);
     try {
       final r = await dio.get(ApiEndpoints.incidents);
-      final list = (r.data['incidents'] as List?)?.map((e) => IncidentModel.fromJson(e as Map<String, dynamic>)).toList() ?? [];
-      if (mounted) setState(() {
-        _confirmed = list.where((e) => e.isConfirmed).toList();
-        _loading = false;
-      });
+      final list = (r.data['incidents'] as List?)
+              ?.map((e) => IncidentModel.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [];
+      if (mounted)
+        setState(() {
+          _confirmed = list.where((e) => e.isConfirmed).toList();
+          _loading = false;
+        });
     } catch (e) {
-      if (mounted) setState(() {
-        _error = e is DioException ? (e.response?.statusMessage ?? 'Bağlantı hatası') : 'Yüklenemedi';
-        _loading = false;
-      });
+      if (mounted)
+        setState(() {
+          _error = e is DioException
+              ? (e.response?.statusMessage ?? 'Connection error')
+              : 'Could not load';
+          _loading = false;
+        });
     }
   }
 
@@ -51,8 +58,9 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Acil Durum Bildirimleri'),
-        leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => context.pop()),
+        title: const Text('Emergency Notifications'),
+        leading: IconButton(
+            icon: const Icon(Icons.arrow_back), onPressed: () => context.pop()),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -63,7 +71,8 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
                     children: [
                       Text(_error!, textAlign: TextAlign.center),
                       const SizedBox(height: 16),
-                      FilledButton(onPressed: _load, child: const Text('Tekrar Dene')),
+                      FilledButton(
+                          onPressed: _load, child: const Text('Retry')),
                     ],
                   ),
                 )
@@ -72,9 +81,10 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.check_circle_outline, size: 64, color: Colors.green),
+                          Icon(Icons.check_circle_outline,
+                              size: 64, color: Colors.green),
                           SizedBox(height: 16),
-                          Text('Aktif acil durum yok'),
+                          Text('No active emergency'),
                         ],
                       ),
                     )
@@ -86,7 +96,7 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
                           child: Padding(
                             padding: EdgeInsets.all(16),
                             child: Text(
-                              'Kaçış: En yakın acil çıkışı kullanın. Asansör kullanmayın.',
+                              'Evacuation: Use the nearest emergency exit. Do not use elevators.',
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
                           ),
@@ -96,9 +106,12 @@ class _EmergencyAlertScreenState extends State<EmergencyAlertScreen> {
                           (inc) => Card(
                             color: Colors.red.shade50,
                             child: ListTile(
-                              leading: const Icon(Icons.warning_amber, color: Colors.red),
-                              title: Text(inc.cameraName ?? 'Kamera #${inc.cameraId}'),
-                              subtitle: Text('${inc.cameraLocation ?? '-'} • Doğrulanmış yangın'),
+                              leading: const Icon(Icons.warning_amber,
+                                  color: Colors.red),
+                              title: Text(
+                                  inc.cameraName ?? 'Camera #${inc.cameraId}'),
+                              subtitle: Text(
+                                  '${inc.cameraLocation ?? '-'} • Confirmed fire'),
                             ),
                           ),
                         ),

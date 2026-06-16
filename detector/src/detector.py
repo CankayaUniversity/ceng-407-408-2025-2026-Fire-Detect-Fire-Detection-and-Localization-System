@@ -17,6 +17,7 @@ class DetectionResult:
     confidence: float
     fire_ratio: float  # ratio of fire pixels
     largest_blob_ratio: float  # ratio of largest contour to frame (for logging)
+    bbox: tuple[int, int, int, int] | None = None
 
 
 class BaseFireDetector(ABC):

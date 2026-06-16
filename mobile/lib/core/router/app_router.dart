@@ -16,6 +16,7 @@ import 'package:flamescope/features/users/user_list_screen.dart';
 import 'package:flamescope/features/users/user_create_screen.dart';
 import 'package:flamescope/features/stream/live_stream_screen.dart';
 import 'package:flamescope/features/emergency/emergency_alert_screen.dart';
+import 'package:flamescope/features/notifications/notification_list_screen.dart';
 
 class AppRouter {
   static const String splash = '/';
@@ -31,6 +32,7 @@ class AppRouter {
   static const String userCreate = '/users/create';
   static const String liveStream = '/stream';
   static const String emergencyAlert = '/emergency';
+  static const String notificationList = '/notifications';
 
   static String incidentDetailPath(int id) => '/incidents/$id';
   static String liveStreamPath({int? cameraId, int? incidentId}) {
@@ -50,41 +52,54 @@ class AppRouter {
 
         if (onSplash) return null;
         if (!authService.isLoggedIn) return onLogin ? null : login;
-        if (onLogin) return _homeForRole(authService.user?.role);
+        if (onLogin) return _homeForRolee(authService.user?.role);
         return null;
       },
       routes: [
-      GoRoute(path: splash, builder: (_, __) => const SplashScreen()),
-      GoRoute(path: login, builder: (_, __) => const LoginScreen()),
-      GoRoute(path: adminHome, builder: (_, __) => const AdminHomeScreen()),
-      GoRoute(path: managerHome, builder: (_, __) => const ManagerHomeScreen()),
-      GoRoute(path: employeeHome, builder: (_, __) => const EmployeeHomeScreen()),
-      GoRoute(path: fireResponseHome, builder: (_, __) => const FireResponseHomeScreen()),
-      GoRoute(path: incidentList, builder: (_, __) => const IncidentListScreen()),
-      GoRoute(
-        path: '/incidents/:id',
-        builder: (c, state) {
-          final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
-          return IncidentDetailScreen(incidentId: id);
-        },
-      ),
-      GoRoute(path: cameraList, builder: (_, __) => const CameraListScreen()),
-      GoRoute(path: userList, builder: (_, __) => const UserListScreen()),
-      GoRoute(path: userCreate, builder: (_, __) => const UserCreateScreen()),
-      GoRoute(
-        path: liveStream,
-        builder: (c, state) {
-          final cameraId = int.tryParse(state.uri.queryParameters['cameraId'] ?? '') ?? 0;
-          final incidentId = int.tryParse(state.uri.queryParameters['incidentId'] ?? '') ?? 0;
-          return LiveStreamScreen(cameraId: cameraId, incidentId: incidentId);
-        },
-      ),
-      GoRoute(path: emergencyAlert, builder: (_, __) => const EmergencyAlertScreen()),
-    ],
+        GoRoute(path: splash, builder: (_, __) => const SplashScreen()),
+        GoRoute(path: login, builder: (_, __) => const LoginScreen()),
+        GoRoute(path: adminHome, builder: (_, __) => const AdminHomeScreen()),
+        GoRoute(
+            path: managerHome, builder: (_, __) => const ManagerHomeScreen()),
+        GoRoute(
+            path: employeeHome, builder: (_, __) => const EmployeeHomeScreen()),
+        GoRoute(
+            path: fireResponseHome,
+            builder: (_, __) => const FireResponseHomeScreen()),
+        GoRoute(
+            path: incidentList, builder: (_, __) => const IncidentListScreen()),
+        GoRoute(
+          path: '/incidents/:id',
+          builder: (c, state) {
+            final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
+            return IncidentDetailScreen(incidentId: id);
+          },
+        ),
+        GoRoute(path: cameraList, builder: (_, __) => const CameraListScreen()),
+        GoRoute(path: userList, builder: (_, __) => const UserListScreen()),
+        GoRoute(path: userCreate, builder: (_, __) => const UserCreateScreen()),
+        GoRoute(
+          path: liveStream,
+          builder: (c, state) {
+            final cameraId =
+                int.tryParse(state.uri.queryParameters['cameraId'] ?? '') ?? 0;
+            final incidentId =
+                int.tryParse(state.uri.queryParameters['incidentId'] ?? '') ??
+                    0;
+            return LiveStreamScreen(cameraId: cameraId, incidentId: incidentId);
+          },
+        ),
+        GoRoute(
+            path: emergencyAlert,
+            builder: (_, __) => const EmergencyAlertScreen()),
+        GoRoute(
+            path: notificationList,
+            builder: (_, __) => const NotificationListScreen()),
+      ],
     );
   }
 
-  static String _homeForRole(AppRole? role) {
+  static String _homeForRolee(AppRole? role) {
     switch (role) {
       case AppRole.admin:
         return adminHome;

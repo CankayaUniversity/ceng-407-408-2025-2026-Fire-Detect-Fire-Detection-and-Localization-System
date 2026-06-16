@@ -19,7 +19,9 @@ class CameraModel {
       name: json['name'] as String? ?? '',
       location: json['location'] as String? ?? '',
       rtspUrl: json['rtsp_url'] as String?,
-      createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at'] as String) : null,
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'] as String)
+          : null,
     );
   }
 }

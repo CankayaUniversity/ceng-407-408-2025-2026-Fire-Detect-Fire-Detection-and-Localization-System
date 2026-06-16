@@ -7,6 +7,7 @@ import 'package:flamescope/core/auth/auth_service.dart';
 import 'package:flamescope/core/constants/app_constants.dart';
 import 'package:flamescope/core/constants/api_constants.dart';
 import 'package:flamescope/core/router/app_router.dart';
+import 'package:flamescope/core/utils/display_formatters.dart';
 
 class UserCreateScreen extends StatefulWidget {
   const UserCreateScreen({super.key});
@@ -20,7 +21,7 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  AppRole _selectedRole = AppRole.employee;
+  AppRole _selectedRolee = AppRole.employee;
   bool _loading = false;
   String? _error;
 
@@ -42,7 +43,7 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
     if (auth.user?.role != AppRole.admin) {
       setState(() {
         _loading = false;
-        _error = 'Bu işlem için yetkiniz yok.';
+        _error = 'You are not authorized for this action.';
       });
       return;
     }
@@ -54,13 +55,13 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
           'full_name': _fullNameController.text.trim(),
           'email': _emailController.text.trim(),
           'password': _passwordController.text,
-          'role': _selectedRole.value,
+          'role': _selectedRolee.value,
         },
       );
       if (mounted) {
         setState(() => _loading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Kullanıcı oluşturuldu')),
+          const SnackBar(content: Text('User created')),
         );
         context.pop(true);
       }
@@ -69,10 +70,11 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
         setState(() {
           _loading = false;
           _error = e is DioException
-              ? (e.response?.data is Map && (e.response?.data as Map)['detail'] != null
+              ? (e.response?.data is Map &&
+                      (e.response?.data as Map)['detail'] != null
                   ? (e.response?.data as Map)['detail'].toString()
-                  : e.response?.statusMessage ?? 'İstek başarısız')
-              : 'İstek başarısız';
+                  : e.response?.statusMessage ?? 'Request failed')
+              : 'Request failed';
         });
       }
     }
@@ -82,7 +84,7 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Yeni Kullanıcı'),
+        title: const Text('New User'),
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () => context.pop(),
@@ -98,27 +100,27 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
               TextFormField(
                 controller: _fullNameController,
                 decoration: const InputDecoration(
-                  labelText: 'Ad Soyad',
+                  labelText: 'Full Name',
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.person_outline),
                 ),
                 textInputAction: TextInputAction.next,
                 validator: (v) =>
-                    v == null || v.trim().isEmpty ? 'Ad soyad girin' : null,
+                    v == null || v.trim().isEmpty ? 'Enter full name' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _emailController,
                 decoration: const InputDecoration(
-                  labelText: 'E-posta',
+                  labelText: 'Email',
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.email_outlined),
                 ),
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
                 validator: (v) {
-                  if (v == null || v.trim().isEmpty) return 'E-posta girin';
-                  if (!v.contains('@')) return 'Geçerli bir e-posta girin';
+                  if (v == null || v.trim().isEmpty) return 'Email girin';
+                  if (!v.contains('@')) return 'Enter a valid email';
                   return null;
                 },
               ),
@@ -126,34 +128,34 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
               TextFormField(
                 controller: _passwordController,
                 decoration: const InputDecoration(
-                  labelText: 'Şifre',
+                  labelText: 'Password',
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.lock_outline),
                 ),
                 obscureText: true,
                 textInputAction: TextInputAction.done,
                 validator: (v) {
-                  if (v == null || v.isEmpty) return 'Şifre girin';
-                  if (v.length < 6) return 'En az 6 karakter olmalı';
+                  if (v == null || v.isEmpty) return 'Enter a password';
+                  if (v.length < 6) return 'Must be at least 6 characters';
                   return null;
                 },
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<AppRole>(
-                value: _selectedRole,
+                value: _selectedRolee,
                 decoration: const InputDecoration(
-                  labelText: 'Rol',
+                  labelText: 'Role',
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.badge_outlined),
                 ),
                 items: AppRole.values
                     .map((r) => DropdownMenuItem(
                           value: r,
-                          child: Text(r.value),
+                          child: RoleBadge(role: r, compact: true),
                         ))
                     .toList(),
                 onChanged: (v) {
-                  if (v != null) setState(() => _selectedRole = v);
+                  if (v != null) setState(() => _selectedRolee = v);
                 },
               ),
               if (_error != null) ...[
@@ -172,7 +174,7 @@ class _UserCreateScreenState extends State<UserCreateScreen> {
                         width: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('Oluştur'),
+                    : const Text('Create'),
               ),
             ],
           ),
